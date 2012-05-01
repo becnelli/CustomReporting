@@ -94,14 +94,25 @@
         _onModelRetrieved: function(model) {
             this.model = model;
 			
+			var ignoredFields = ['State'];
+			var allowedTypes = ['string', 'bool'];
+			var filterableFields = _.filter(model.getFields(), function(model){
+				var allowed = true;
+				allowed &= !model.hidden;
+				allowed &= _.indexOf(ignoredFields, model.name) === -1;
+				allowed &= (model.type.type === 'string' && model.allowedValues.length !== 0 || model.type.type === 'bool');
+
+				return allowed;
+			});
 			
-			// var ignoredFields = ['ObjectID'];
-			// var filterableFields = _.filter(model.getFields(), function(model){
-				// return !model.hidden && _.indexOf(ignoredFields, model.name) === -1;
-			// });
-			// console.log(filterableFields);
-			// var fields = _.pluck(filterableFields, 'name');
-			var fields = ['Severity', 'Priority', 'ScheduleState'];
+			var fieldTypes = {};
+			_.each(filterableFields, function(field){
+				fieldTypes[field.name] = field.type.type;
+			});
+			this.fieldTypes = fieldTypes;
+			
+			var fields = _.pluck(filterableFields, 'name');
+			
             this._populateStore(fields);
         },
 

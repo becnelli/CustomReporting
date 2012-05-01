@@ -69,18 +69,37 @@ Ext.define('BurnChartApp', {
 		var removed = _.difference(oldFields, newFields);
 		
 		for (var i in added) {
-			console.log(added[i]);
-			var newFilter = Ext.create('Rally.ui.AttributeComboBox', {
-				id: added[i],
-				model: 'Defect',
-				field: added[i],
-				fieldLabel: added[i],
-				multiSelect: true
-			});
+			if(this.defectFieldPicker.fieldTypes[added[i]] === 'bool') {
+				var filterStore = Ext.create('Ext.data.Store', {
+					fields: ['display', 'value'],
+					data: [
+						{"display":'True', value: true},
+						{"display":'False', value: false}
+					]
+				});
+				
+				var newFilter = Ext.create('Ext.form.ComboBox', {
+					fieldLabel: added[i],
+					id: added[i],
+					multiSelect: true,
+					store: filterStore,
+					queryMode: 'local',
+					displayField: 'display',
+					valueField: 'value'
+				});
+			}
+			else {
+				var newFilter = Ext.create('Rally.ui.AttributeComboBox', {
+					id: added[i],
+					model: 'Defect',
+					field: added[i],
+					fieldLabel: added[i],
+					multiSelect: true
+				});
+			}
 			this.customFilterContainer.add(newFilter);
 		}
 		for (var i in removed) {
-			console.log(removed[i]);
 			this.customFilterContainer.remove(Ext.getCmp(removed[i]));
 		}
 		
@@ -136,12 +155,10 @@ Ext.define('BurnChartApp', {
 		var defectStates = this.defectStatePicker.getValue();
 		chartQuery.find.State = {$in:defectStates};
 		
-		
 		var filterItems = this.customFilterContainer.query();
 		for (var i in filterItems)
 		{
 			var filterItem = filterItems[i];
-			console.log(filterItem.getValue());
 			chartQuery.find[filterItem.id] = {$in:filterItem.getValue()};
 		}
 		
