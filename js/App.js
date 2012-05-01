@@ -123,9 +123,28 @@ Ext.define('BurnChartApp', {
     },
 
     _refreshChart: function() {
+        
+		this.chartQuery = this._buildChartQuery();
+		this.chartConfigBuilder.build(this.chartQuery, "Defect Count", Ext.bind(this._afterChartConfigBuilt, this));
+    },
+	
+	_buildChartQuery: function(){
+		var chartQuery = {find:{}};
+		
+		chartQuery.find._ProjectHierarchy = Rally.environment.getContext().getScope().project.ObjectID;
+		
 		var defectStates = this.defectStatePicker.getValue();
-        this.chartQuery.find._ProjectHierarchy = Rally.environment.getContext().getScope().project.ObjectID;
-		this.chartQuery.find.State = {$in:defectStates};
-        this.chartConfigBuilder.build(this.chartQuery, "Defect Count", Ext.bind(this._afterChartConfigBuilt, this));
-    }
+		chartQuery.find.State = {$in:defectStates};
+		
+		
+		var filterItems = this.customFilterContainer.query();
+		for (var i in filterItems)
+		{
+			var filterItem = filterItems[i];
+			console.log(filterItem.getValue());
+			chartQuery.find[filterItem.id] = {$in:filterItem.getValue()};
+		}
+		
+		return chartQuery;
+	}
 });

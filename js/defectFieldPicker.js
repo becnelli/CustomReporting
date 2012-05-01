@@ -93,12 +93,15 @@
 
         _onModelRetrieved: function(model) {
             this.model = model;
-            this.field = this.model.getField(this.field);
-			var ignoredFields = ['ObjectID'];
-			var visibleFields = _.filter(model.getFields(), function(model){
-				return !model.hidden && _.indexOf(ignoredFields, model.name) === -1;
-			});
-			var fields = _.pluck(visibleFields, 'name');
+			
+			
+			// var ignoredFields = ['ObjectID'];
+			// var filterableFields = _.filter(model.getFields(), function(model){
+				// return !model.hidden && _.indexOf(ignoredFields, model.name) === -1;
+			// });
+			// console.log(filterableFields);
+			// var fields = _.pluck(filterableFields, 'name');
+			var fields = ['Severity', 'Priority', 'ScheduleState'];
             this._populateStore(fields);
         },
 
