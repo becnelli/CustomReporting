@@ -10,17 +10,7 @@ Ext.define('BurnChartApp', {
     appName:'Burn Chart',
     cls:'burnchart',
 
-    launch: function () {
-        this.startTime = '2012-03-01T00:00:00Z';
-        this.chartQuery = {
-            find:{
-                _Type:'Defect',
-                _ValidFrom: {
-                    $gte: this.startTime
-                }
-            }
-        };
-		
+    launch: function () {		
         this.chartConfigBuilder = Ext.create('Rally.app.analytics.BurnChartBuilder');
 		
 		this.filterContainer = Ext.create('Ext.Container', {
@@ -98,6 +88,7 @@ Ext.define('BurnChartApp', {
 	},
 	
 	_afterChartConfigBuilt: function (success, chartConfig) {
+		this.getEl().unmask('Loading...');
         this._removeChartComponent();
         if (success){
             this.add({
@@ -110,7 +101,7 @@ Ext.define('BurnChartApp', {
             this.add({
                 id: 'chartCmp',
                 xtype: 'component',
-                html: '<div>No user story data found starting from: ' + this.startTime + '</div>'
+                html: '<div>No user story data found. :(</div>'
             });
         }
     },
@@ -125,11 +116,20 @@ Ext.define('BurnChartApp', {
     _refreshChart: function() {
         
 		this.chartQuery = this._buildChartQuery();
+		this.getEl().mask('Loading...');
 		this.chartConfigBuilder.build(this.chartQuery, "Defect Count", Ext.bind(this._afterChartConfigBuilt, this));
     },
 	
 	_buildChartQuery: function(){
-		var chartQuery = {find:{}};
+        var startTime = '2012-03-01T00:00:00Z';
+        var chartQuery = {
+            find:{
+                _Type:'Defect',
+                _ValidFrom: {
+                    $gte: startTime
+                }
+            }
+        };
 		
 		chartQuery.find._ProjectHierarchy = Rally.environment.getContext().getScope().project.ObjectID;
 		
