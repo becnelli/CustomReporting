@@ -94,7 +94,7 @@
           type = 'column';
           break;
         case 'scope':
-          name = "Scope (" + config.upSeriesType + ")";
+          name = "Defect Count";
           if (config.upSeriesType === 'Story Count') {
             f = '$count';
           } else if (config.upSeriesType === 'Points') {

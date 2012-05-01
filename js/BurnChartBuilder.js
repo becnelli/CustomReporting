@@ -106,7 +106,6 @@
                     upSeriesType:'Story Count',
                     // 'Points' or 'Story Count'
                     series:[
-                        'up',
                         'scope'
                     ],
 
@@ -162,7 +161,7 @@
                     yAxis:[
                         {
                             title:{
-                                text:'Hours'
+                                text:'Defect Count'
                             },
                             labels:{
                                 formatter:function () {
@@ -173,7 +172,7 @@
                         },
                         {
                             title:{
-                                text:burnConfig.upSeriesType
+                                text:''
                             },
                             opposite:true,
                             labels:{

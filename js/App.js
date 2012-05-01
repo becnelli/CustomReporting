@@ -15,7 +15,6 @@ Ext.define('BurnChartApp', {
         this.chartQuery = {
             find:{
                 _Type:'Defect',
-                Children:null,
                 _ValidFrom: {
                     $gte: this.startTime
                 }
@@ -24,7 +23,6 @@ Ext.define('BurnChartApp', {
 
         this.chartConfigBuilder = Ext.create('Rally.app.analytics.BurnChartBuilder');
 		var project = Rally.environment.getContext().getScope().project.ObjectID;
-		console.log( project );
 		this._refreshChart(project, "Test");
 
     },
