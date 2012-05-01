@@ -124,8 +124,14 @@ Ext.define('BurnChartApp', {
 				model: 'Defect',
 				field: 'State',
 				fieldLabel: 'State',
-				multiSelect: true
+				multiSelect: true,
+				listeners:{
+					ready: function(comboBox){
+						comboBox.setValue(['Submitted', 'Open']);
+					}
+				}
 			});
+		
 		
 		this.defectStatePickerContainer = Ext.create('Ext.Container', {
 			items: [this.defectStatePicker]
