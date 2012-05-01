@@ -13,11 +13,105 @@ Ext.define('BurnChartApp', {
     launch: function () {		
         this.chartConfigBuilder = Ext.create('Rally.app.analytics.BurnChartBuilder');
 		
-		this.filterContainer = Ext.create('Ext.panel.Panel', {
-			title: 'Chart Filtering',
+		var reportControls = this._buildReportControls();
+		var chartFilteringControls = this._buildChartFilteringControls();
+
+		// Button
+		var runQueryButton = Ext.create('Ext.Container', {
+			items: [{
+				xtype: 'rallybutton',
+				text: 'Build Chart',
+				handler: Ext.bind(this._refreshChart, this)
+			}]
+		});
+		
+		var leftNavigation = Ext.create('Ext.Container', {
+			items: [reportControls, chartFilteringControls, runQueryButton],
 			flex: 1,
+			defaults: {
+				padding: '5 0 0 0'
+			}
+		});
+		
+		this.add(leftNavigation);
+		this.add({
+			id: 'chartCmp',
+			flex: 2,
+			border: 0
+		});
+    },
+	
+	_buildReportControls: function () {
+		var reportContainer = Ext.create('Ext.panel.Panel', {
+			title: 'Standard Reports',
 			layout: {
-				type: 'vbox'
+				type: 'fit'
+			},
+			defaults: {
+				padding: '2 0 2 0'
+			}
+		});
+		
+		this.reportStore = Ext.create('Ext.data.Store', {
+			fields: ['display'],
+			data: [
+				{'display': 'Released - Critical/High'},
+				{'display': 'Blocked'}
+			],
+			filterInfo: {
+				'Released - Critical/High': {
+					State: ['Submitted', 'Open', 'Fixed/Resolved'],
+					ReleasedDefect: [true],
+					Priority: ['Critical', 'High']
+				},
+				"Blocked": {
+					State: ['Submitted', 'Open', 'Fixed/Resolved'],
+					Blocked: [true]
+				}
+			}
+		});
+		
+		this.reportComboBox = Ext.create('Ext.form.ComboBox', {
+			fieldLabel: "Report",
+			store: this.reportStore,
+			queryMode: 'local',
+			displayField: 'display',
+			valueField: 'display',
+			listeners: {
+				select: Ext.bind(this._reportSelected, this)
+			}
+		});
+		
+		reportContainer.add(this.reportComboBox);
+	
+		return reportContainer;
+	},
+	
+	_reportSelected: function(comboBox, records){
+		var selectedReport = records[0].data.display;
+		var filterInfo = this.reportStore.filterInfo[selectedReport];
+		
+		var fields = _.keys(filterInfo);
+		fields = _.without(fields, 'State');
+		this.defectFieldPicker.setValue(fields);
+		
+		for(var key in filterInfo)
+		{
+			var cntrl = Ext.getCmp(key);
+			if(_.isUndefined(cntrl)) {
+				alert('Missing control: ' + key);
+			}
+			else {
+				cntrl.setValue(filterInfo[key]);
+			}
+		}
+	},
+	
+	_buildChartFilteringControls: function() {	
+		var filterContainer = Ext.create('Ext.panel.Panel', {
+			title: 'Chart Filtering',
+			layout: {
+				type: 'fit'
 			},
 			defaults: {
 				padding: '2 2 0 2'
@@ -26,6 +120,7 @@ Ext.define('BurnChartApp', {
 		
 		// State Picker
 		this.defectStatePicker = Ext.create('Rally.ui.AttributeComboBox', {
+				id: 'State',
 				model: 'Defect',
 				field: 'State',
 				fieldLabel: 'State',
@@ -35,6 +130,7 @@ Ext.define('BurnChartApp', {
 		this.defectStatePickerContainer = Ext.create('Ext.Container', {
 			items: [this.defectStatePicker]
 		});
+		filterContainer.add( this.defectStatePickerContainer );
 		
 		this.startTimePicker = Ext.create('Rally.ui.DateField', {
 			fieldLabel: 'Start Date',
@@ -43,6 +139,7 @@ Ext.define('BurnChartApp', {
 		this.startTimePickerContainer = Ext.create('Ext.Container', {
 			items: [this.startTimePicker]
 		});
+		filterContainer.add( this.startTimePickerContainer );
 		
 		this.endTimePicker = Ext.create('Rally.ui.DateField', {
 			fieldLabel: 'End Date',
@@ -51,6 +148,7 @@ Ext.define('BurnChartApp', {
 		this.endTimePickerContainer = Ext.create('Ext.Container', {
 			items: [this.endTimePicker]
 		});
+		filterContainer.add( this.endTimePickerContainer );
 		
 		// Customer Filter Picker
 		this.defectFieldPicker = Ext.create('DefectFieldComboBox', {
@@ -65,6 +163,7 @@ Ext.define('BurnChartApp', {
 		this.defectFieldPickerContainer = Ext.create('Ext.Container', {
 			items: [this.defectFieldPicker ]
 		});
+		filterContainer.add( this.defectFieldPickerContainer );
 		
 		// Custom Filter Container
 		this.customFilterContainer = Ext.create('Ext.panel.Panel', {
@@ -77,28 +176,10 @@ Ext.define('BurnChartApp', {
 				padding: '2 0 0 0'
 			}
 		});
+		filterContainer.add( this.customFilterContainer );
 		
-		// Button
-		var runQueryButton = Ext.create('Ext.Container', {
-			items: [{
-				xtype: 'rallybutton',
-				text: 'Build Chart',
-				handler: Ext.bind(this._refreshChart, this)
-			}]
-		});
-		
-		this.filterContainer.add( this.defectStatePickerContainer );
-		this.filterContainer.add( this.startTimePickerContainer );
-		this.filterContainer.add( this.endTimePickerContainer );
-		this.filterContainer.add( this.defectFieldPickerContainer );
-		this.filterContainer.add( this.customFilterContainer );
-		this.filterContainer.add( runQueryButton );
-		this.add(this.filterContainer);
-		this.add({
-			id: 'chartCmp',
-			flex: 2
-		});
-    },
+		return filterContainer;
+	},
 	
 	_defectFieldSelectionChanged: function(comboBox, newFields, oldFields){
 		newFields = _.isUndefined(newFields) ? [] : newFields;
