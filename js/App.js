@@ -20,17 +20,40 @@ Ext.define('BurnChartApp', {
                 }
             }
         };
-
+		
         this.chartConfigBuilder = Ext.create('Rally.app.analytics.BurnChartBuilder');
 		
+		this.filterContainer = Ext.create('Ext.Container', {
+			layout: 'vbox'
+		});
+				
 		this.defectStatePicker = Ext.create('Rally.ui.AttributeComboBox', {
 				model: 'Defect',
 				field: 'State',
+				fieldLabel: 'State',
 				multiSelect: true
 			});
 		
 		this.defectStatePickerContainer = Ext.create('Ext.Container', {
 			items: [this.defectStatePicker]
+		});
+		
+		this.defectFieldPicker = Ext.create('DefectFieldComboBox', {
+			model: 'Defect',
+			fieldLabel: 'Custom Filters',
+			multiSelect: true,
+			listeners:{
+				select: Ext.bind(this._defectFieldSelectionChanged, this)
+			}
+		});
+		
+		this.defectFieldPickerContainer = Ext.create('Ext.Container', {
+			items: [this.defectFieldPicker ]
+		});
+		
+		this.customFilterContainer = Ext.create('Ext.Container', {
+			items: [],
+			layout: 'fit'
 		});
 		
 		var runQueryButton = Ext.create('Ext.Container', {
@@ -41,21 +64,44 @@ Ext.define('BurnChartApp', {
 			}]
 		});
 		
-		this.defectFieldPicker = Ext.create('DefectFieldComboBox', {
-			model: 'Defect',
-			multiSelect: true
-		});
+		this.filterContainer.add( this.defectStatePickerContainer );
+		this.filterContainer.add( this.defectFieldPickerContainer );
+		this.filterContainer.add( this.customFilterContainer );
+		this.filterContainer.add( runQueryButton );
+		this.add(this.filterContainer);
 		
-		this.defectFieldPickerContainer = Ext.create('Ext.Container', {
-			items: [this.defectFieldPicker ]
-		});
-		
-		this.add( this.defectFieldPickerContainer );
-		this.add( this.defectStatePickerContainer );
-		this.add( runQueryButton );
+		this._customFilters = [];
     },
 	
-    _afterChartConfigBuilt: function (success, chartConfig) {
+	_defectFieldSelectionChanged: function(comboBox, fieldsSelected){
+		var newFieldNames = _.map(fieldsSelected, function(field){
+			return field.data.name;
+		});
+		
+		var added = _.difference(newFieldNames, this._customFilters);
+		var removed = _.difference(this._customFilters, newFieldNames);
+		
+		for (var i in added) {
+			console.log('Added: ' + added[i]);
+			var newFilter = Ext.create('Rally.ui.AttributeComboBox', {
+				id: added[i],
+				model: 'Defect',
+				field: added[i],
+				fieldLabel: added[i],
+				multiSelect: true
+			});
+			this.customFilterContainer.add(newFilter);
+		}
+		for (var i in removed) {
+			console.log('Removed: ' + removed[i]);
+		}
+		
+		this.customFilterContainer.doLayout();
+		
+		this._customFilters = newFieldNames;
+	},
+	
+	_afterChartConfigBuilt: function (success, chartConfig) {
         this._removeChartComponent();
         if (success){
             this.add({
