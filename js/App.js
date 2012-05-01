@@ -11,10 +11,10 @@ Ext.define('BurnChartApp', {
     cls:'burnchart',
 
     launch: function () {
-        this.startTime = '2012-03-01T00:00:00Z';
+        this.startTime = '2012-01-01T00:00:00Z';
         this.chartQuery = {
             find:{
-                _Type:'HierarchicalRequirement',
+                _Type:'Defect',
                 Children:null,
                 _ValidFrom: {
                     $gte: this.startTime
@@ -23,7 +23,9 @@ Ext.define('BurnChartApp', {
         };
 
         this.chartConfigBuilder = Ext.create('Rally.app.analytics.BurnChartBuilder');
-		this._refreshChart(Rally.environment.getContext().getScope().project.ObjectID, "Test");
+		var project = Rally.environment.getContext().getScope().project.ObjectID;
+		console.log( project );
+		this._refreshChart(project, "Test");
 
     },
 
@@ -37,11 +39,10 @@ Ext.define('BurnChartApp', {
                 chartConfig: chartConfig
             });
         } else {
-            var formattedId = this.selectedRowRecord.get('FormattedID');
             this.add({
                 id: 'chartCmp',
                 xtype: 'component',
-                html: '<div>No user story data found for ' + formattedId + ' starting from: ' + this.startTime + '</div>'
+                html: '<div>No user story data found starting from: ' + this.startTime + '</div>'
             });
         }
     },
@@ -53,9 +54,8 @@ Ext.define('BurnChartApp', {
         }
     },
 
-    _refreshChart: function(itemId, title) {
-        this.chartQuery.find._ItemHierarchy = itemId;
-        this.down('#chartCmp').getEl().mask('Loading...');
+    _refreshChart: function(projectId, title) {
+        this.chartQuery.find._ProjectHierarchy = projectId;
         this.chartConfigBuilder.build(this.chartQuery, title, Ext.bind(this._afterChartConfigBuilt, this));
     }
 });

@@ -101,14 +101,6 @@
                     // They work on Sundays
                 };
 
-                var acceptedStates = [];
-                if( this.scheduleStateOidAccepted ){
-                    acceptedStates.push( this.scheduleStateOidAccepted );
-                }
-                if( this.scheduleStateOidReleased ){
-                    acceptedStates.push( this.scheduleStateOidReleased );
-                }
-
                 var burnConfig = {
                     workspaceConfiguration:workspaceConfiguration,
                     upSeriesType:'Story Count',
@@ -118,7 +110,7 @@
                         'scope'
                     ],
 
-                    acceptedStates:acceptedStates,
+                    acceptedStates:[],
                     start:this.startTime,
                     // Calculated either by inspecting results or via configuration. pastEnd is automatically the last date in results
                     holidays:[
