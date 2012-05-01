@@ -1,50 +1,58 @@
 (function () {
 
     Ext.define('Rally.app.analytics.BurnChartBuilder', {
-        mixins:{
-            componentUpdatable:'Rally.util.ComponentUpdatable'
-        },
-        build:function (requestedQuery, chartTitle, buildFinishedCallback) {
+        build:function (requestedQuery, startTime, endTime, chartTitle, buildFinishedCallback) {
+			this.requestedQuery = requestedQuery;
+			this.startTime = startTime;
+			this.endTime = endTime;
+			this.chartTitle = chartTitle;
+			this.buildFinishedCallback = buildFinishedCallback;
+		
+            this.workspace = Rally.util.Ref.getOidFromRef(Rally.environment.getContext().context.scope.workspace._ref);
+			
+            var singleDefectQuery = {
+                find:Ext.encode(this.requestedQuery.find),
+                pagesize:1
+            };
+			
+			// query to get earliest defect    
+            Ext.Ajax.request({
+                url:"https://rally1.rallydev.com/analytics/1.27/" + this.workspace + "/artifact/snapshot/query.js?" + Ext.Object.toQueryString(singleDefectQuery) +
+                    "&fields=['_ValidFrom']&sort={_ValidFrom:1}",
+                method:"GET",
+                success:function (response) {
+                    this._earliestDefectFound(JSON.parse(response.responseText));
+                },
+                scope:this
+            });
 
-            this.chartTitle = chartTitle;
-            this.buildFinishedCallback = buildFinishedCallback;
-            this.startTime = requestedQuery.find._ValidFrom.$gte; //TODO: better way to get/set this
+        },
+		
+		_earliestDefectFound: function(response) {
+			var earliestValidFrom = this.endTime;
+			if (response.Results.length > 0) {
+				earliestValidFrom = response.Results[0]._ValidFrom;
+			}
+			
+			this.requestedQuery.find._ValidFrom = {
+				$gte: earliestValidFrom,
+				$lt: this.endTime
+			};
+			
+			this._buildChart();
+		},
+		
+		_buildChart: function() {
             this.query = {
-                find:Ext.encode(requestedQuery.find),
+                find:Ext.encode(this.requestedQuery.find),
                 pagesize:10000
             };
-            this.requestedFields = Ext.Array.union(['_ValidFrom', '_ValidTo', 'ObjectID', 'ScheduleState'], requestedQuery.fields ? requestedQuery.fields : []);
+            this.requestedFields = Ext.Array.union(['_ValidFrom', '_ValidTo', 'ObjectID'], this.requestedQuery.fields ? this.requestedQuery.fields : []);
 
-            this.workspace = Rally.util.Ref.getOidFromRef(Rally.environment.getContext().context.scope.workspace._ref);
 
-            if (this.scheduleStateOidAccepted && this.scheduleStateOidReleased) {
-                this._queryAnalyticsApi();
-            } else {
-                //mark this component that its updating multiple ajax requests. See Rally.util.ComponentUpdatable mixin.
-                var acceptedReqName = 'GetAcceptedScheduleStateOid';
-                var releasedReqName = 'GetReleasedScheduleStateOid';
-                //mark which requests need to be made
-                if (!this.scheduleStateOidAccepted) {
-                    this.markUpdating(acceptedReqName);
-                }
-                if (!this.scheduleStateOidReleased) {
-                    this.markUpdating(releasedReqName);
-                }
-                //now make requests
-                if (!this.scheduleStateOidAccepted) {
-                    this._getScheduleStateOid('Accepted', acceptedReqName);
-                }
-                if (!this.scheduleStateOidReleased) {
-                    this._getScheduleStateOid('Released', releasedReqName);
-                }
-            }
-
-        },
-
-        _afterAllScheduleStateOidsReturned:function () {
-            this._queryAnalyticsApi();
-        },
-
+			this._queryAnalyticsApi();
+		},
+		
         _queryAnalyticsApi:function () {
             Ext.Ajax.request({
                 url:"https://rally1.rallydev.com/analytics/1.27/" + this.workspace + "/artifact/snapshot/query.js?" + Ext.Object.toQueryString(this.query) +
@@ -52,24 +60,6 @@
                 method:"GET",
                 success:function (response) {
                     this._afterQueryReturned(JSON.parse(response.responseText));
-                },
-                scope:this
-            });
-        },
-
-        _getScheduleStateOid:function (state, reqName) {
-            var workspace = Rally.util.Ref.getOidFromRef(Rally.environment.getContext().context.scope.workspace._ref);
-            var project = Rally.util.Ref.getOidFromRef(Rally.environment.getContext().context.scope.project._ref);
-            var analyticsScheduleStateQuery = "find={ScheduleState:'" + state + "',Project:" + project + "}&fields=['ScheduleState']&pagesize=1";
-            Ext.Ajax.request({
-                url:"https://rally1.rallydev.com/analytics/1.27/" + workspace + "/artifact/snapshot/query.js?" + analyticsScheduleStateQuery,
-                method:"GET",
-                success:function (response) {
-                    var results = JSON.parse(response.responseText).Results;
-                    if (results.length > 0) {
-                        this['scheduleStateOid' + state] = results[0].ScheduleState;
-                    }
-                    this.markUpdated(reqName, this._afterAllScheduleStateOidsReturned, this);
                 },
                 scope:this
             });
