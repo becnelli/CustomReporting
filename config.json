@@ -3,6 +3,8 @@
     "className":"BurnChartApp",
     "sdk":"2.0p",
     "javascript":[
+		"js/underscore.js",
+		"js/defectFieldPicker.js",
 		"js/burncalculator.js",
         "js/BurnChartBuilder.js",
         "js/App.js"

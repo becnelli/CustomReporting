@@ -11,7 +11,7 @@ Ext.define('BurnChartApp', {
     cls:'burnchart',
 
     launch: function () {
-        this.startTime = '2012-01-01T00:00:00Z';
+        this.startTime = '2012-03-01T00:00:00Z';
         this.chartQuery = {
             find:{
                 _Type:'Defect',
@@ -22,11 +22,39 @@ Ext.define('BurnChartApp', {
         };
 
         this.chartConfigBuilder = Ext.create('Rally.app.analytics.BurnChartBuilder');
-		var project = Rally.environment.getContext().getScope().project.ObjectID;
-		this._refreshChart(project, "Test");
-
+		
+		this.defectStatePicker = Ext.create('Rally.ui.AttributeComboBox', {
+				model: 'Defect',
+				field: 'State',
+				multiSelect: true
+			});
+		
+		this.defectStatePickerContainer = Ext.create('Ext.Container', {
+			items: [this.defectStatePicker]
+		});
+		
+		var runQueryButton = Ext.create('Ext.Container', {
+			items: [{
+				xtype: 'rallybutton',
+				text: 'Build Chart',
+				handler: Ext.bind(this._refreshChart, this)
+			}]
+		});
+		
+		this.defectFieldPicker = Ext.create('DefectFieldComboBox', {
+			model: 'Defect',
+			multiSelect: true
+		});
+		
+		this.defectFieldPickerContainer = Ext.create('Ext.Container', {
+			items: [this.defectFieldPicker ]
+		});
+		
+		this.add( this.defectFieldPickerContainer );
+		this.add( this.defectStatePickerContainer );
+		this.add( runQueryButton );
     },
-
+	
     _afterChartConfigBuilt: function (success, chartConfig) {
         this._removeChartComponent();
         if (success){
@@ -52,8 +80,10 @@ Ext.define('BurnChartApp', {
         }
     },
 
-    _refreshChart: function(projectId, title) {
-        this.chartQuery.find._ProjectHierarchy = projectId;
-        this.chartConfigBuilder.build(this.chartQuery, title, Ext.bind(this._afterChartConfigBuilt, this));
+    _refreshChart: function() {
+		var defectStates = this.defectStatePicker.getValue();
+        this.chartQuery.find._ProjectHierarchy = Rally.environment.getContext().getScope().project.ObjectID;
+		this.chartQuery.find.State = {$in:defectStates};
+        this.chartConfigBuilder.build(this.chartQuery, "Defect Count", Ext.bind(this._afterChartConfigBuilt, this));
     }
 });
