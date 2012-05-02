@@ -28,7 +28,7 @@ Ext.define('OnDemandCustomAnalytics', {
 		});
 		
 		var leftNavigation = Ext.create('Ext.Container', {
-			items: [reportControls, chartFilteringControls, runQueryButton],
+			items: [chartFilteringControls, runQueryButton],
 			flex: 1,
 			defaults: {
 				padding: '5 0 0 5'
