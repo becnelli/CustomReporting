@@ -12,9 +12,9 @@ Ext.define('OnDemandCustomAnalytics', {
 	_labelWidth: 120,
 	_padding: '2 0 0 0',
 
-    launch: function () {		
+    launch: function () {
         this.chartConfigBuilder = Ext.create('Rally.app.analytics.BurnChartBuilder');
-		
+
 		var reportControls = this._buildReportControls();
 		var chartFilteringControls = this._buildChartFilteringControls();
 
@@ -26,15 +26,15 @@ Ext.define('OnDemandCustomAnalytics', {
 				handler: Ext.bind(this._refreshChart, this)
 			}]
 		});
-		
+
 		var leftNavigation = Ext.create('Ext.Container', {
-			items: [chartFilteringControls, runQueryButton],
+			items: [reportControls, chartFilteringControls, runQueryButton],
 			flex: 1,
 			defaults: {
 				padding: '5 0 0 5'
 			}
 		});
-		
+
 		this.add(leftNavigation);
 		this.add({
 			id: 'chartCmp',
@@ -42,7 +42,7 @@ Ext.define('OnDemandCustomAnalytics', {
 			border: 0
 		});
     },
-	
+
 	_buildReportControls: function () {
 		var reportContainer = Ext.create('Ext.panel.Panel', {
 			title: 'Standard Reports',
@@ -54,39 +54,45 @@ Ext.define('OnDemandCustomAnalytics', {
 				anchor: '100%'
 			}
 		});
-		
+
 		this.reportStore = Ext.create('Ext.data.Store', {
 			fields: ['display'],
 			data: [
+                {'display': 'Portfolio Items: Horizon 1 Must Haves'},
 				{'display': 'Defects: Not Closed, Released and Critical/High'},
 				{'display': 'Defects: Not Closed and Blocked'},
 				{'display': 'Defects: Fixed/Resolved'},
 				{'display': 'User Stories: In-Progress and Blocked'}
 			],
 			filterInfo: {
-				'Defects: Not Closed, Released and Critical/High': {
+                "Portfolio Items: Horizon 1 Must Haves":{
+                  Type: "PortfolioItem",
+                  InvestmentCategory:["Horizon 1"],
+                  Priority:["Must Have"]
+                },
+                "User Stories: In-Progress and Blocked": {
+                    Type: 'HierarchicalRequirement',
+                    ScheduleState: ['In-Progress'],
+                    Blocked: [true]
+                },
+                'Defects: Not Closed, Released and Critical/High': {
 					Type: 'Defect',
 					State: ['Submitted', 'Open', 'Fixed/Resolved'],
 					ReleasedDefect: [true],
 					Priority: ['Critical', 'High']
 				},
-				"Defects: Not Closed and Blocked": {
+                "Defects: Not Closed and Blocked": {
 					Type: 'Defect',
 					State: ['Submitted', 'Open', 'Fixed/Resolved'],
 					Blocked: [true]
 				},
-				"Defects: Fixed/Resolved": {
+                "Defects: Fixed/Resolved": {
 					Type: 'Defect',
 					State: ['Fixed/Resolved']
-				},
-				"User Stories: In-Progress and Blocked": {
-					Type: 'HierarchicalRequirement',
-					ScheduleState: ['In-Progress'],
-					Blocked: [true]
 				}
 			}
 		});
-		
+
 		this.reportComboBox = Ext.create('Ext.form.field.ComboBox', {
 			fieldLabel: "Report",
 			labelWidth: this._labelWidth,
@@ -98,31 +104,32 @@ Ext.define('OnDemandCustomAnalytics', {
 			editable: false
 		});
 		this.reportComboBox.addListener('select', this._reportSelected, this);
-		
+
 		reportContainer.add(this.reportComboBox);
-	
+
 		return reportContainer;
 	},
-	
+
 	_reportSelected: function(comboBox, records){
 		var selectedReport = records[0].data.display;
 		var filterInfo = this.reportStore.filterInfo[selectedReport];
-		
-		// select filter first
-		this._typeFilterSelected(null, [{
-			data: {
-				value: filterInfo['Type']
-			}
-		}]);
-		
-		// then set the custom filters
+
+        var type = filterInfo['Type'];
+        this.typeFilter.setValue(type);
+        this.typeFilter.fireEvent('select',null,[{
+            data:{
+                value: type
+            }
+        }]);
+
 		this._setCustomFilters(filterInfo);
 	},
-	
+
 	_setCustomFilters: function(filterInfo) {
 		var fields = _.keys(filterInfo);
-		this.currentTypeFilter.setValue(fields);
-		
+		fields = _.without(fields,'Type');
+        this.currentTypeFilter.setValue(fields);
+
 		for(var key in filterInfo)
 		{
 			var cntrl = Ext.getCmp(key);
@@ -134,8 +141,8 @@ Ext.define('OnDemandCustomAnalytics', {
 			}
 		}
 	},
-	
-	_buildChartFilteringControls: function() {	
+
+	_buildChartFilteringControls: function() {
 		var filterContainer = Ext.create('Ext.panel.Panel', {
 			title: 'Chart Filtering',
 			layout: {
@@ -146,7 +153,7 @@ Ext.define('OnDemandCustomAnalytics', {
 				anchor: '100%'
 			}
 		});
-		
+
 		var typeStore = Ext.create('Ext.data.Store', {
 			fields: ['display', 'value'],
 			data: [
@@ -156,7 +163,7 @@ Ext.define('OnDemandCustomAnalytics', {
 				{'display': 'Task', value: 'Task'}
 			]
 		});
-		
+
 		// Type Filter
 		this.typeFilter = Ext.create('Rally.ui.ComboBox', {
 			id: 'Type',
@@ -178,7 +185,7 @@ Ext.define('OnDemandCustomAnalytics', {
 			}
 		});
 		filterContainer.add( this.typeFilterContainer );
-		
+
 		// Start and End time
 		this.startTimePicker = Ext.create('Rally.ui.DateField', {
 			fieldLabel: 'Start Date',
@@ -193,7 +200,7 @@ Ext.define('OnDemandCustomAnalytics', {
 			}
 		});
 		filterContainer.add( this.startTimePickerContainer );
-		
+
 		this.endTimePicker = Ext.create('Rally.ui.DateField', {
 			fieldLabel: 'End Date',
 			labelWidth: this._labelWidth,
@@ -207,7 +214,7 @@ Ext.define('OnDemandCustomAnalytics', {
 			}
 		});
 		filterContainer.add( this.endTimePickerContainer );
-		
+
 		// Customer Filter Picker
 		this.piFieldPicker = Ext.create('FieldComboBox', {
 			model: 'PortfolioItem',
@@ -249,7 +256,7 @@ Ext.define('OnDemandCustomAnalytics', {
 				change: Ext.bind(this._defectFieldSelectionChanged, this)
 			}
 		});
-		
+
 		this.typeFieldPickerContainer = Ext.create('Ext.Container', {
 			items: [this.piFieldPicker, this.defectFieldPicker, this.storyFieldPicker, this.taskFieldPicker ],
 			layout: 'anchor',
@@ -258,7 +265,7 @@ Ext.define('OnDemandCustomAnalytics', {
 			}
 		});
 		filterContainer.add( this.typeFieldPickerContainer );
-		
+
 		// Custom Filter Container
 		this.customFilterContainer = Ext.create('Ext.panel.Panel', {
 			title: 'Custom Filters',
@@ -272,17 +279,16 @@ Ext.define('OnDemandCustomAnalytics', {
 			}
 		});
 		filterContainer.add( this.customFilterContainer );
-		
+
 		return filterContainer;
 	},
-	
+
 	_typeFilterSelected: function(comboBox, records) {
-		// set custom filters
 		if(this.currentTypeFilter) {
 			this.currentTypeFilter.hide();
 			this._setCustomFilters({});
 		}
-			
+
 		if(records[0].data.value === 'Defect') {
 			this.currentTypeFilter = this.defectFieldPicker;
 			this._setCustomFilters(
@@ -311,21 +317,21 @@ Ext.define('OnDemandCustomAnalytics', {
 			);
 		}
 		this.currentTypeFilter.show();
-		
+
 	},
-	
+
 	_defectFieldSelectionChanged: function(comboBox, newFields, oldFields){
 		newFields = _.isUndefined(newFields) || newFields.length === 0 ? [] : newFields.split(', ');
 		oldFields = _.isUndefined(oldFields) || oldFields.length === 0  ? [] : oldFields.split(', ');
 
 		var added = _.difference(newFields, oldFields);
 		var removed = _.difference(oldFields, newFields);
-		
+
 		if(newFields.length === 0)
 			this.customFilterContainer.hide();
 		else
 			this.customFilterContainer.show();
-		
+
 		for (var i in added) {
 			if(this.currentTypeFilter.fieldTypes[added[i]] === 'bool') {
 				var filterStore = Ext.create('Ext.data.Store', {
@@ -335,7 +341,7 @@ Ext.define('OnDemandCustomAnalytics', {
 						{"display":'False', value: false}
 					]
 				});
-				
+
 				var newFilter = Ext.create('Ext.ux.form.field.BoxSelect', {
 					id: added[i],
 					fieldLabel: added[i],
@@ -362,10 +368,10 @@ Ext.define('OnDemandCustomAnalytics', {
 		for (var i in removed) {
 			this.customFilterContainer.remove(Ext.getCmp(removed[i]));
 		}
-		
-		this.customFilterContainer.doLayout();	
+
+		this.customFilterContainer.doLayout();
 	},
-	
+
 	_afterChartConfigBuilt: function (success, chartConfig) {
 		this.getEl().unmask('Loading...');
         this._removeChartComponent();
@@ -396,26 +402,26 @@ Ext.define('OnDemandCustomAnalytics', {
     _refreshChart: function() {
 		this.chartQuery = this._buildChartQuery();
 		this.getEl().mask('Loading...');
-		this.chartConfigBuilder.build(this.chartQuery, this.startTimePicker.getValue().toISOString(), this.endTimePicker.getValue().toISOString(), 
+		this.chartConfigBuilder.build(this.chartQuery, this.startTimePicker.getValue().toISOString(), this.endTimePicker.getValue().toISOString(),
 			this.typeFilter.getRawValue() + " Count", Ext.bind(this._afterChartConfigBuilt, this));
     },
-	
+
 	_buildChartQuery: function(){
         var chartQuery = {
             find:{
                 _Type: this.typeFilter.getValue()
             }
         };
-		
+
 		chartQuery.find._ProjectHierarchy = Rally.environment.getContext().getScope().project.ObjectID;
-		
+
 		var filterItems = this.customFilterContainer.query('pickerfield');
 		for (var i in filterItems)
 		{
 			var filterItem = filterItems[i];
 			chartQuery.find[filterItem.id] = {$in:filterItem.getValue()};
 		}
-		
+
 		return chartQuery;
 	}
 });

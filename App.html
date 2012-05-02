@@ -3162,9 +3162,9 @@
             	_labelWidth: 120,
             	_padding: '2 0 0 0',
             
-                launch: function () {		
+                launch: function () {
                     this.chartConfigBuilder = Ext.create('Rally.app.analytics.BurnChartBuilder');
-            		
+            
             		var reportControls = this._buildReportControls();
             		var chartFilteringControls = this._buildChartFilteringControls();
             
@@ -3176,7 +3176,7 @@
             				handler: Ext.bind(this._refreshChart, this)
             			}]
             		});
-            		
+            
             		var leftNavigation = Ext.create('Ext.Container', {
             			items: [reportControls, chartFilteringControls, runQueryButton],
             			flex: 1,
@@ -3184,7 +3184,7 @@
             				padding: '5 0 0 5'
             			}
             		});
-            		
+            
             		this.add(leftNavigation);
             		this.add({
             			id: 'chartCmp',
@@ -3192,7 +3192,7 @@
             			border: 0
             		});
                 },
-            	
+            
             	_buildReportControls: function () {
             		var reportContainer = Ext.create('Ext.panel.Panel', {
             			title: 'Standard Reports',
@@ -3204,39 +3204,45 @@
             				anchor: '100%'
             			}
             		});
-            		
+            
             		this.reportStore = Ext.create('Ext.data.Store', {
             			fields: ['display'],
             			data: [
+                            {'display': 'Portfolio Items: Horizon 1 Must Haves'},
             				{'display': 'Defects: Not Closed, Released and Critical/High'},
             				{'display': 'Defects: Not Closed and Blocked'},
             				{'display': 'Defects: Fixed/Resolved'},
             				{'display': 'User Stories: In-Progress and Blocked'}
             			],
             			filterInfo: {
-            				'Defects: Not Closed, Released and Critical/High': {
+                            "Portfolio Items: Horizon 1 Must Haves":{
+                              Type: "PortfolioItem",
+                              InvestmentCategory:["Horizon 1"],
+                              Priority:["Must Have"]
+                            },
+                            "User Stories: In-Progress and Blocked": {
+                                Type: 'HierarchicalRequirement',
+                                ScheduleState: ['In-Progress'],
+                                Blocked: [true]
+                            },
+                            'Defects: Not Closed, Released and Critical/High': {
             					Type: 'Defect',
             					State: ['Submitted', 'Open', 'Fixed/Resolved'],
             					ReleasedDefect: [true],
             					Priority: ['Critical', 'High']
             				},
-            				"Defects: Not Closed and Blocked": {
+                            "Defects: Not Closed and Blocked": {
             					Type: 'Defect',
             					State: ['Submitted', 'Open', 'Fixed/Resolved'],
             					Blocked: [true]
             				},
-            				"Defects: Fixed/Resolved": {
+                            "Defects: Fixed/Resolved": {
             					Type: 'Defect',
             					State: ['Fixed/Resolved']
-            				},
-            				"User Stories: In-Progress and Blocked": {
-            					Type: 'HierarchicalRequirement',
-            					ScheduleState: ['In-Progress'],
-            					Blocked: [true]
             				}
             			}
             		});
-            		
+            
             		this.reportComboBox = Ext.create('Ext.form.field.ComboBox', {
             			fieldLabel: "Report",
             			labelWidth: this._labelWidth,
@@ -3248,31 +3254,32 @@
             			editable: false
             		});
             		this.reportComboBox.addListener('select', this._reportSelected, this);
-            		
+            
             		reportContainer.add(this.reportComboBox);
-            	
+            
             		return reportContainer;
             	},
-            	
+            
             	_reportSelected: function(comboBox, records){
             		var selectedReport = records[0].data.display;
             		var filterInfo = this.reportStore.filterInfo[selectedReport];
-            		
-            		// select filter first
-            		this._typeFilterSelected(null, [{
-            			data: {
-            				value: filterInfo['Type']
-            			}
-            		}]);
-            		
-            		// then set the custom filters
+            
+                    var type = filterInfo['Type'];
+                    this.typeFilter.setValue(type);
+                    this.typeFilter.fireEvent('select',null,[{
+                        data:{
+                            value: type
+                        }
+                    }]);
+            
             		this._setCustomFilters(filterInfo);
             	},
-            	
+            
             	_setCustomFilters: function(filterInfo) {
             		var fields = _.keys(filterInfo);
-            		this.currentTypeFilter.setValue(fields);
-            		
+            		fields = _.without(fields,'Type');
+                    this.currentTypeFilter.setValue(fields);
+            
             		for(var key in filterInfo)
             		{
             			var cntrl = Ext.getCmp(key);
@@ -3284,8 +3291,8 @@
             			}
             		}
             	},
-            	
-            	_buildChartFilteringControls: function() {	
+            
+            	_buildChartFilteringControls: function() {
             		var filterContainer = Ext.create('Ext.panel.Panel', {
             			title: 'Chart Filtering',
             			layout: {
@@ -3296,16 +3303,17 @@
             				anchor: '100%'
             			}
             		});
-            		
+            
             		var typeStore = Ext.create('Ext.data.Store', {
             			fields: ['display', 'value'],
             			data: [
+            				{'display': 'Portfolio Item', value: 'PortfolioItem'},
             				{'display': 'Defect', value: 'Defect'},
             				{'display': 'User Story', value: 'HierarchicalRequirement'},
             				{'display': 'Task', value: 'Task'}
             			]
             		});
-            		
+            
             		// Type Filter
             		this.typeFilter = Ext.create('Rally.ui.ComboBox', {
             			id: 'Type',
@@ -3327,7 +3335,7 @@
             			}
             		});
             		filterContainer.add( this.typeFilterContainer );
-            		
+            
             		// Start and End time
             		this.startTimePicker = Ext.create('Rally.ui.DateField', {
             			fieldLabel: 'Start Date',
@@ -3342,7 +3350,7 @@
             			}
             		});
             		filterContainer.add( this.startTimePickerContainer );
-            		
+            
             		this.endTimePicker = Ext.create('Rally.ui.DateField', {
             			fieldLabel: 'End Date',
             			labelWidth: this._labelWidth,
@@ -3356,8 +3364,18 @@
             			}
             		});
             		filterContainer.add( this.endTimePickerContainer );
-            		
+            
             		// Customer Filter Picker
+            		this.piFieldPicker = Ext.create('FieldComboBox', {
+            			model: 'PortfolioItem',
+            			fieldLabel: 'Custom Filters',
+            			labelWidth: this._labelWidth,
+            			multiSelect: true,
+            			hidden: true,
+            			listeners:{
+            				change: Ext.bind(this._defectFieldSelectionChanged, this)
+            			}
+            		});
             		this.defectFieldPicker = Ext.create('FieldComboBox', {
             			model: 'Defect',
             			fieldLabel: 'Custom Filters',
@@ -3388,16 +3406,16 @@
             				change: Ext.bind(this._defectFieldSelectionChanged, this)
             			}
             		});
-            		
+            
             		this.typeFieldPickerContainer = Ext.create('Ext.Container', {
-            			items: [this.defectFieldPicker, this.storyFieldPicker, this.taskFieldPicker ],
+            			items: [this.piFieldPicker, this.defectFieldPicker, this.storyFieldPicker, this.taskFieldPicker ],
             			layout: 'anchor',
             			defaults: {
             				anchor: '100%'
             			}
             		});
             		filterContainer.add( this.typeFieldPickerContainer );
-            		
+            
             		// Custom Filter Container
             		this.customFilterContainer = Ext.create('Ext.panel.Panel', {
             			title: 'Custom Filters',
@@ -3411,17 +3429,16 @@
             			}
             		});
             		filterContainer.add( this.customFilterContainer );
-            		
+            
             		return filterContainer;
             	},
-            	
+            
             	_typeFilterSelected: function(comboBox, records) {
-            		// set custom filters
             		if(this.currentTypeFilter) {
             			this.currentTypeFilter.hide();
             			this._setCustomFilters({});
             		}
-            			
+            
             		if(records[0].data.value === 'Defect') {
             			this.currentTypeFilter = this.defectFieldPicker;
             			this._setCustomFilters(
@@ -3442,23 +3459,29 @@
             				{
             				}
             			);
+            		} else if (records[0].data.value === 'PortfolioItem') {
+            			this.currentTypeFilter = this.piFieldPicker;
+            			this._setCustomFilters(
+            				{
+            				}
+            			);
             		}
             		this.currentTypeFilter.show();
-            		
+            
             	},
-            	
+            
             	_defectFieldSelectionChanged: function(comboBox, newFields, oldFields){
             		newFields = _.isUndefined(newFields) || newFields.length === 0 ? [] : newFields.split(', ');
             		oldFields = _.isUndefined(oldFields) || oldFields.length === 0  ? [] : oldFields.split(', ');
             
             		var added = _.difference(newFields, oldFields);
             		var removed = _.difference(oldFields, newFields);
-            		
+            
             		if(newFields.length === 0)
             			this.customFilterContainer.hide();
             		else
             			this.customFilterContainer.show();
-            		
+            
             		for (var i in added) {
             			if(this.currentTypeFilter.fieldTypes[added[i]] === 'bool') {
             				var filterStore = Ext.create('Ext.data.Store', {
@@ -3468,7 +3491,7 @@
             						{"display":'False', value: false}
             					]
             				});
-            				
+            
             				var newFilter = Ext.create('Ext.ux.form.field.BoxSelect', {
             					id: added[i],
             					fieldLabel: added[i],
@@ -3495,10 +3518,10 @@
             		for (var i in removed) {
             			this.customFilterContainer.remove(Ext.getCmp(removed[i]));
             		}
-            		
-            		this.customFilterContainer.doLayout();	
+            
+            		this.customFilterContainer.doLayout();
             	},
-            	
+            
             	_afterChartConfigBuilt: function (success, chartConfig) {
             		this.getEl().unmask('Loading...');
                     this._removeChartComponent();
@@ -3529,26 +3552,26 @@
                 _refreshChart: function() {
             		this.chartQuery = this._buildChartQuery();
             		this.getEl().mask('Loading...');
-            		this.chartConfigBuilder.build(this.chartQuery, this.startTimePicker.getValue().toISOString(), this.endTimePicker.getValue().toISOString(), 
+            		this.chartConfigBuilder.build(this.chartQuery, this.startTimePicker.getValue().toISOString(), this.endTimePicker.getValue().toISOString(),
             			this.typeFilter.getRawValue() + " Count", Ext.bind(this._afterChartConfigBuilt, this));
                 },
-            	
+            
             	_buildChartQuery: function(){
                     var chartQuery = {
                         find:{
                             _Type: this.typeFilter.getValue()
                         }
                     };
-            		
+            
             		chartQuery.find._ProjectHierarchy = Rally.environment.getContext().getScope().project.ObjectID;
-            		
+            
             		var filterItems = this.customFilterContainer.query('pickerfield');
             		for (var i in filterItems)
             		{
             			var filterItem = filterItems[i];
             			chartQuery.find[filterItem.id] = {$in:filterItem.getValue()};
             		}
-            		
+            
             		return chartQuery;
             	}
             });
