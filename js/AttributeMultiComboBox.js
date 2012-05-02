@@ -124,6 +124,7 @@
                 }
             }, this);
             this.store.loadRawData(allowedValues);
+			this.fireEvent('ready', this);
         },
 
         _onAfterRender: function() {
