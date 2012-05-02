@@ -1,6 +1,6 @@
 {
-    "name":"BurnChartApp",
-    "className":"BurnChartApp",
+    "name":"On-Demand Custom Analytics",
+    "className":"OnDemandCustomAnalytics",
     "sdk":"2.0p",
     "javascript":[
 		"js/BoxSelect.js",
