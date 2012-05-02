@@ -94,7 +94,7 @@
         _onModelRetrieved: function(model) {
             this.model = model;
 			
-			var ignoredFields = ['State'];
+			var ignoredFields = [];//['State'];
 			var allowedTypes = ['string', 'bool'];
 			var filterableFields = _.filter(model.getFields(), function(model){
 				var allowed = true;

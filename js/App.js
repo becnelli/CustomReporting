@@ -97,7 +97,7 @@ Ext.define('BurnChartApp', {
 		var filterInfo = this.reportStore.filterInfo[selectedReport];
 		
 		var fields = _.keys(filterInfo);
-		fields = _.without(fields, 'State');
+		//fields = _.without(fields, 'State');
 		this.defectFieldPicker.setValue(fields);
 		
 		for(var key in filterInfo)
@@ -124,30 +124,30 @@ Ext.define('BurnChartApp', {
 			}
 		});
 		
-		// State Picker
-		this.defectStatePicker = Ext.create('Rally.ui.AttributeMultiComboBox', {
-				id: 'State',
-				model: 'Defect',
-				field: 'State',
-				fieldLabel: 'State',
-				labelWidth: this._labelWidth,
-				multiSelect: true,
-				listeners:{
-					ready: function(comboBox){
-						comboBox.setValue(['Submitted', 'Open']);
-					}
-				}
-			});
+		// // State Picker
+		// this.defectStatePicker = Ext.create('Rally.ui.AttributeMultiComboBox', {
+				// id: 'State',
+				// model: 'Defect',
+				// field: 'State',
+				// fieldLabel: 'State',
+				// labelWidth: this._labelWidth,
+				// multiSelect: true,
+				// listeners:{
+					// ready: function(comboBox){
+						// comboBox.setValue(['Submitted', 'Open']);
+					// }
+				// }
+			// });
 		
 		
-		this.defectStatePickerContainer = Ext.create('Ext.Container', {
-			items: [this.defectStatePicker],
-			layout: 'anchor',
-			defaults: {
-				anchor: '100%'
-			}
-		});
-		filterContainer.add( this.defectStatePickerContainer );
+		// this.defectStatePickerContainer = Ext.create('Ext.Container', {
+			// items: [this.defectStatePicker],
+			// layout: 'anchor',
+			// defaults: {
+				// anchor: '100%'
+			// }
+		// });
+		// filterContainer.add( this.defectStatePickerContainer );
 		
 		this.startTimePicker = Ext.create('Rally.ui.DateField', {
 			fieldLabel: 'Start Date',
@@ -309,8 +309,8 @@ Ext.define('BurnChartApp', {
 		
 		chartQuery.find._ProjectHierarchy = Rally.environment.getContext().getScope().project.ObjectID;
 		
-		var defectStates = this.defectStatePicker.getValue();
-		chartQuery.find.State = {$in:defectStates};
+		// var defectStates = this.defectStatePicker.getValue();
+		// chartQuery.find.State = {$in:defectStates};
 		
 		var filterItems = this.customFilterContainer.query('pickerfield');
 		for (var i in filterItems)
