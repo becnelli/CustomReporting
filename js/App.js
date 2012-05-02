@@ -9,6 +9,8 @@ Ext.define('BurnChartApp', {
     },
     appName:'Burn Chart',
     cls:'burnchart',
+	_labelWidth: 120,
+	_padding: '2 0 0 0',
 
     launch: function () {		
         this.chartConfigBuilder = Ext.create('Rally.app.analytics.BurnChartBuilder');
@@ -29,7 +31,7 @@ Ext.define('BurnChartApp', {
 			items: [reportControls, chartFilteringControls, runQueryButton],
 			flex: 1,
 			defaults: {
-				padding: '5 0 0 0'
+				padding: '5 0 0 5'
 			}
 		});
 		
@@ -45,10 +47,11 @@ Ext.define('BurnChartApp', {
 		var reportContainer = Ext.create('Ext.panel.Panel', {
 			title: 'Standard Reports',
 			layout: {
-				type: 'fit'
+				type: 'anchor'
 			},
 			defaults: {
-				padding: '2 0 2 0'
+				padding: this._padding,
+				anchor: '100%'
 			}
 		});
 		
@@ -73,10 +76,12 @@ Ext.define('BurnChartApp', {
 		
 		this.reportComboBox = Ext.create('Ext.form.ComboBox', {
 			fieldLabel: "Report",
+			labelWidth: this._labelWidth,
 			store: this.reportStore,
 			queryMode: 'local',
 			displayField: 'display',
 			valueField: 'display',
+			padding: this._padding,
 			listeners: {
 				select: Ext.bind(this._reportSelected, this)
 			}
@@ -111,10 +116,11 @@ Ext.define('BurnChartApp', {
 		var filterContainer = Ext.create('Ext.panel.Panel', {
 			title: 'Chart Filtering',
 			layout: {
-				type: 'fit'
+				type: 'anchor'
 			},
 			defaults: {
-				padding: '2 2 0 2'
+				padding: this._padding,
+				anchor: '100%'
 			}
 		});
 		
@@ -124,6 +130,7 @@ Ext.define('BurnChartApp', {
 				model: 'Defect',
 				field: 'State',
 				fieldLabel: 'State',
+				labelWidth: this._labelWidth,
 				multiSelect: true,
 				listeners:{
 					ready: function(comboBox){
@@ -134,25 +141,39 @@ Ext.define('BurnChartApp', {
 		
 		
 		this.defectStatePickerContainer = Ext.create('Ext.Container', {
-			items: [this.defectStatePicker]
+			items: [this.defectStatePicker],
+			layout: 'anchor',
+			defaults: {
+				anchor: '100%'
+			}
 		});
 		filterContainer.add( this.defectStatePickerContainer );
 		
 		this.startTimePicker = Ext.create('Rally.ui.DateField', {
 			fieldLabel: 'Start Date',
+			labelWidth: this._labelWidth,
 			value: new Date().add(-1).month()
 		});
 		this.startTimePickerContainer = Ext.create('Ext.Container', {
-			items: [this.startTimePicker]
+			items: [this.startTimePicker],
+			layout: 'anchor',
+			defaults: {
+				anchor: '100%'
+			}
 		});
 		filterContainer.add( this.startTimePickerContainer );
 		
 		this.endTimePicker = Ext.create('Rally.ui.DateField', {
 			fieldLabel: 'End Date',
+			labelWidth: this._labelWidth,
 			value: new Date().add(1).days()
 		});
 		this.endTimePickerContainer = Ext.create('Ext.Container', {
-			items: [this.endTimePicker]
+			items: [this.endTimePicker],
+			layout: 'anchor',
+			defaults: {
+				anchor: '100%'
+			}
 		});
 		filterContainer.add( this.endTimePickerContainer );
 		
@@ -160,6 +181,7 @@ Ext.define('BurnChartApp', {
 		this.defectFieldPicker = Ext.create('DefectFieldComboBox', {
 			model: 'Defect',
 			fieldLabel: 'Custom Filters',
+			labelWidth: this._labelWidth,
 			multiSelect: true,
 			listeners:{
 				change: Ext.bind(this._defectFieldSelectionChanged, this)
@@ -167,7 +189,11 @@ Ext.define('BurnChartApp', {
 		});
 		
 		this.defectFieldPickerContainer = Ext.create('Ext.Container', {
-			items: [this.defectFieldPicker ]
+			items: [this.defectFieldPicker ],
+			layout: 'anchor',
+			defaults: {
+				anchor: '100%'
+			}
 		});
 		filterContainer.add( this.defectFieldPickerContainer );
 		
@@ -177,9 +203,10 @@ Ext.define('BurnChartApp', {
 			hidden: true,
 			padding: '5 5 5 5',
 			items: [],
-			layout: 'fit',
+			layout: 'anchor',
 			defaults: {
-				padding: '2 0 0 0'
+				padding: this._padding,
+				anchor: '100%'
 			}
 		});
 		filterContainer.add( this.customFilterContainer );
@@ -199,7 +226,6 @@ Ext.define('BurnChartApp', {
 		else
 			this.customFilterContainer.show();
 		
-		var labelWidth = 120;
 		for (var i in added) {
 			if(this.defectFieldPicker.fieldTypes[added[i]] === 'bool') {
 				var filterStore = Ext.create('Ext.data.Store', {
@@ -213,7 +239,7 @@ Ext.define('BurnChartApp', {
 				var newFilter = Ext.create('Ext.ux.form.field.BoxSelect', {
 					id: added[i],
 					fieldLabel: added[i],
-					labelWidth: labelWidth,
+					labelWidth: this._labelWidth,
 					multiSelect: true,
 					store: filterStore,
 					queryMode: 'local',
@@ -227,7 +253,7 @@ Ext.define('BurnChartApp', {
 					model: 'Defect',
 					field: added[i],
 					fieldLabel: added[i],
-					labelWidth: labelWidth,
+					labelWidth: this._labelWidth,
 					multiSelect: true
 				});
 			}
