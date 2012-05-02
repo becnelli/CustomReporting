@@ -1,4 +1,4 @@
-Ext.define('BurnChartApp', {
+Ext.define('OnDemandCustomAnalytics', {
     extend:'Rally.app.App',
     mixins: {
         messageable: 'Rally.Messageable'
@@ -7,7 +7,7 @@ Ext.define('BurnChartApp', {
         type: 'hbox',
         align: 'stretch'
     },
-    appName:'Burn Chart',
+    appName:'On-Demand Custom Analytics',
     cls:'burnchart',
 	_labelWidth: 120,
 	_padding: '2 0 0 0',
