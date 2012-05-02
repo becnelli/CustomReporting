@@ -188,9 +188,9 @@ Ext.define('BurnChartApp', {
 	},
 	
 	_defectFieldSelectionChanged: function(comboBox, newFields, oldFields){
-		newFields = _.isUndefined(newFields) ? [] : newFields;
-		oldFields = _.isUndefined(oldFields) ? [] : oldFields;
-		
+		newFields = _.isUndefined(newFields) || newFields.length === 0 ? [] : newFields.split(', ');
+		oldFields = _.isUndefined(oldFields) || oldFields.length === 0  ? [] : oldFields.split(', ');
+
 		var added = _.difference(newFields, oldFields);
 		var removed = _.difference(oldFields, newFields);
 		

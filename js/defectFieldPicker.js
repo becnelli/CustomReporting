@@ -16,7 +16,7 @@
      */
     Ext.define('DefectFieldComboBox', {
         requires: ['Ext.Array'],
-        extend: 'Rally.ui.ComboBox',
+        extend: 'Rally.ui.AttributeMultiComboBox',
         alias: 'widget.defectfieldcombobox',
 
         config: {
