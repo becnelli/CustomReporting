@@ -150,6 +150,7 @@ Ext.define('OnDemandCustomAnalytics', {
 		var typeStore = Ext.create('Ext.data.Store', {
 			fields: ['display', 'value'],
 			data: [
+				{'display': 'Portfolio Item', value: 'PortfolioItem'},
 				{'display': 'Defect', value: 'Defect'},
 				{'display': 'User Story', value: 'HierarchicalRequirement'},
 				{'display': 'Task', value: 'Task'}
@@ -208,6 +209,16 @@ Ext.define('OnDemandCustomAnalytics', {
 		filterContainer.add( this.endTimePickerContainer );
 		
 		// Customer Filter Picker
+		this.piFieldPicker = Ext.create('FieldComboBox', {
+			model: 'PortfolioItem',
+			fieldLabel: 'Custom Filters',
+			labelWidth: this._labelWidth,
+			multiSelect: true,
+			hidden: true,
+			listeners:{
+				change: Ext.bind(this._defectFieldSelectionChanged, this)
+			}
+		});
 		this.defectFieldPicker = Ext.create('FieldComboBox', {
 			model: 'Defect',
 			fieldLabel: 'Custom Filters',
@@ -240,7 +251,7 @@ Ext.define('OnDemandCustomAnalytics', {
 		});
 		
 		this.typeFieldPickerContainer = Ext.create('Ext.Container', {
-			items: [this.defectFieldPicker, this.storyFieldPicker, this.taskFieldPicker ],
+			items: [this.piFieldPicker, this.defectFieldPicker, this.storyFieldPicker, this.taskFieldPicker ],
 			layout: 'anchor',
 			defaults: {
 				anchor: '100%'
@@ -288,6 +299,12 @@ Ext.define('OnDemandCustomAnalytics', {
 			);
 		} else if (records[0].data.value === 'Task') {
 			this.currentTypeFilter = this.taskFieldPicker;
+			this._setCustomFilters(
+				{
+				}
+			);
+		} else if (records[0].data.value === 'PortfolioItem') {
+			this.currentTypeFilter = this.piFieldPicker;
 			this._setCustomFilters(
 				{
 				}
