@@ -58,11 +58,11 @@ Ext.define('OnDemandCustomAnalytics', {
 		this.reportStore = Ext.create('Ext.data.Store', {
 			fields: ['display'],
 			data: [
-                {'display': 'Portfolio Items: Horizon 1 Must Haves'},
+                {'display': 'Portfolio Items: Horizon 1 Must Haves'},				
+				{'display': 'User Stories: In-Progress and Blocked'},
 				{'display': 'Defects: Not Closed, Released and Critical/High'},
 				{'display': 'Defects: Not Closed and Blocked'},
-				{'display': 'Defects: Fixed/Resolved'},
-				{'display': 'User Stories: In-Progress and Blocked'}
+				{'display': 'Defects: Fixed/Resolved'}
 			],
 			filterInfo: {
                 "Portfolio Items: Horizon 1 Must Haves":{
@@ -158,8 +158,8 @@ Ext.define('OnDemandCustomAnalytics', {
 			fields: ['display', 'value'],
 			data: [
 				{'display': 'Portfolio Item', value: 'PortfolioItem'},
-				{'display': 'Defect', value: 'Defect'},
 				{'display': 'User Story', value: 'HierarchicalRequirement'},
+				{'display': 'Defect', value: 'Defect'},
 				{'display': 'Task', value: 'Task'}
 			]
 		});
