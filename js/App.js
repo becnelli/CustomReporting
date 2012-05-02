@@ -119,7 +119,7 @@ Ext.define('BurnChartApp', {
 		});
 		
 		// State Picker
-		this.defectStatePicker = Ext.create('Rally.ui.AttributeComboBox', {
+		this.defectStatePicker = Ext.create('Rally.ui.AttributeMultiComboBox', {
 				id: 'State',
 				model: 'Defect',
 				field: 'State',
