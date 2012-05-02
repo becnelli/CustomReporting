@@ -14,7 +14,7 @@
      *         renderTo: Ext.getBody().dom
      *     });
      */
-    Ext.define('DefectFieldComboBox', {
+    Ext.define('FieldComboBox', {
         requires: ['Ext.Array'],
         extend: 'Rally.ui.AttributeMultiComboBox',
         alias: 'widget.defectfieldcombobox',
@@ -94,7 +94,7 @@
         _onModelRetrieved: function(model) {
             this.model = model;
 			
-			var ignoredFields = [];//['State'];
+			var ignoredFields = [];
 			var allowedTypes = ['string', 'bool'];
 			var filterableFields = _.filter(model.getFields(), function(model){
 				var allowed = true;

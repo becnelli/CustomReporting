@@ -98,8 +98,20 @@ Ext.define('OnDemandCustomAnalytics', {
 		var selectedReport = records[0].data.display;
 		var filterInfo = this.reportStore.filterInfo[selectedReport];
 		
+		// select filter first
+		this._typeFilterSelected(null, [{
+			data: {
+				value: filterInfo['Type']
+			}
+		}]);
+		
+		// then set the custom filters
+		this._setCustomFilters(filterInfo);
+	},
+	
+	_setCustomFilters: function(filterInfo) {
 		var fields = _.keys(filterInfo);
-		this.defectFieldPicker.setValue(fields);
+		this.currentTypeFilter.setValue(fields);
 		
 		for(var key in filterInfo)
 		{
@@ -111,6 +123,7 @@ Ext.define('OnDemandCustomAnalytics', {
 				cntrl.setValue(filterInfo[key]);
 			}
 		}
+	
 	},
 	
 	_buildChartFilteringControls: function() {	
@@ -128,7 +141,8 @@ Ext.define('OnDemandCustomAnalytics', {
 		var typeStore = Ext.create('Ext.data.Store', {
 			fields: ['display', 'value'],
 			data: [
-				{'display': 'Defects', value: 'Defect'}
+				{'display': 'Defects', value: 'Defect'},
+				{'display': 'User Stories', value: 'HierarchicalRequirement'}
 			]
 		});
 		
@@ -140,7 +154,10 @@ Ext.define('OnDemandCustomAnalytics', {
 			store: typeStore,
 			queryMode: 'local',
 			displayField: 'display',
-			valueField: 'value'
+			valueField: 'value',
+			listeners: {
+				select: Ext.bind(this._typeFilterSelected, this)
+			}
 		});
 		this.typeFilterContainer = Ext.create('Ext.Container', {
 			items: [this.typeFilter],
@@ -181,24 +198,35 @@ Ext.define('OnDemandCustomAnalytics', {
 		filterContainer.add( this.endTimePickerContainer );
 		
 		// Customer Filter Picker
-		this.defectFieldPicker = Ext.create('DefectFieldComboBox', {
+		this.defectFieldPicker = Ext.create('FieldComboBox', {
 			model: 'Defect',
 			fieldLabel: 'Custom Filters',
 			labelWidth: this._labelWidth,
 			multiSelect: true,
+			hidden: true,
+			listeners:{
+				change: Ext.bind(this._defectFieldSelectionChanged, this)
+			}
+		});
+		this.storyFieldPicker = Ext.create('FieldComboBox', {
+			model: 'HierarchicalRequirement',
+			fieldLabel: 'Custom Filters',
+			labelWidth: this._labelWidth,
+			multiSelect: true,
+			hidden: true,
 			listeners:{
 				change: Ext.bind(this._defectFieldSelectionChanged, this)
 			}
 		});
 		
-		this.defectFieldPickerContainer = Ext.create('Ext.Container', {
-			items: [this.defectFieldPicker ],
+		this.typeFieldPickerContainer = Ext.create('Ext.Container', {
+			items: [this.defectFieldPicker, this.storyFieldPicker ],
 			layout: 'anchor',
 			defaults: {
 				anchor: '100%'
 			}
 		});
-		filterContainer.add( this.defectFieldPickerContainer );
+		filterContainer.add( this.typeFieldPickerContainer );
 		
 		// Custom Filter Container
 		this.customFilterContainer = Ext.create('Ext.panel.Panel', {
@@ -215,6 +243,32 @@ Ext.define('OnDemandCustomAnalytics', {
 		filterContainer.add( this.customFilterContainer );
 		
 		return filterContainer;
+	},
+	
+	_typeFilterSelected: function(comboBox, records) {
+		// set custom filters
+		if(this.currentTypeFilter) {
+			this.currentTypeFilter.hide();
+			this._setCustomFilters({});
+		}
+			
+		if(records[0].data.value === 'Defect') {
+			this.currentTypeFilter = this.defectFieldPicker;
+			this._setCustomFilters(
+				{
+					State: ['Submitted', 'Open', 'Fixed/Resolved']
+				}
+			);
+		} else {
+			this.currentTypeFilter = this.storyFieldPicker;
+			this._setCustomFilters(
+				{
+					ScheduleState: [ 'In-Progress' ]
+				}
+			);
+		}
+		this.currentTypeFilter.show();
+		
 	},
 	
 	_defectFieldSelectionChanged: function(comboBox, newFields, oldFields){
@@ -299,21 +353,19 @@ Ext.define('OnDemandCustomAnalytics', {
     _refreshChart: function() {
 		this.chartQuery = this._buildChartQuery();
 		this.getEl().mask('Loading...');
+		console.log(this.typeFilter);
 		this.chartConfigBuilder.build(this.chartQuery, this.startTimePicker.getValue().toISOString(), this.endTimePicker.getValue().toISOString(), 
-			"Defect Count", Ext.bind(this._afterChartConfigBuilt, this));
+			this.typeFilter.getRawValue() + " Count", Ext.bind(this._afterChartConfigBuilt, this));
     },
 	
 	_buildChartQuery: function(){
         var chartQuery = {
             find:{
-                _Type:'Defect'
+                _Type: this.typeFilter.getValue()
             }
         };
 		
 		chartQuery.find._ProjectHierarchy = Rally.environment.getContext().getScope().project.ObjectID;
-		
-		// var defectStates = this.defectStatePicker.getValue();
-		// chartQuery.find.State = {$in:defectStates};
 		
 		var filterItems = this.customFilterContainer.query('pickerfield');
 		for (var i in filterItems)
