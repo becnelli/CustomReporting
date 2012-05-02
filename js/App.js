@@ -222,7 +222,7 @@ Ext.define('BurnChartApp', {
 				});
 			}
 			else {
-				var newFilter = Ext.create('Rally.ui.AttributeComboBox', {
+				var newFilter = Ext.create('Rally.ui.AttributeMultiComboBox', {
 					id: added[i],
 					model: 'Defect',
 					field: added[i],
