@@ -58,25 +58,36 @@ Ext.define('OnDemandCustomAnalytics', {
 		this.reportStore = Ext.create('Ext.data.Store', {
 			fields: ['display'],
 			data: [
-				{'display': 'Defects: Released - Critical/High'},
-				{'display': 'Defects: Blocked'}
+				{'display': 'Defects: Not Closed, Released and Critical/High'},
+				{'display': 'Defects: Not Closed and Blocked'},
+				{'display': 'Defects: Fixed/Resolved'},
+				{'display': 'User Stories: In-Progress and Blocked'}
 			],
 			filterInfo: {
-				'Defects: Released - Critical/High': {
+				'Defects: Not Closed, Released and Critical/High': {
 					Type: 'Defect',
 					State: ['Submitted', 'Open', 'Fixed/Resolved'],
 					ReleasedDefect: [true],
 					Priority: ['Critical', 'High']
 				},
-				"Defects: Blocked": {
+				"Defects: Not Closed and Blocked": {
 					Type: 'Defect',
 					State: ['Submitted', 'Open', 'Fixed/Resolved'],
+					Blocked: [true]
+				},
+				"Defects: Fixed/Resolved": {
+					Type: 'Defect',
+					State: ['Fixed/Resolved']
+				},
+				"User Stories: In-Progress and Blocked": {
+					Type: 'HierarchicalRequirement',
+					ScheduleState: ['In-Progress'],
 					Blocked: [true]
 				}
 			}
 		});
 		
-		this.reportComboBox = Ext.create('Ext.form.ComboBox', {
+		this.reportComboBox = Ext.create('Ext.form.field.ComboBox', {
 			fieldLabel: "Report",
 			labelWidth: this._labelWidth,
 			store: this.reportStore,
@@ -84,10 +95,9 @@ Ext.define('OnDemandCustomAnalytics', {
 			displayField: 'display',
 			valueField: 'display',
 			padding: this._padding,
-			listeners: {
-				select: Ext.bind(this._reportSelected, this)
-			}
+			editable: false
 		});
+		this.reportComboBox.addListener('select', this._reportSelected, this);
 		
 		reportContainer.add(this.reportComboBox);
 	
@@ -123,7 +133,6 @@ Ext.define('OnDemandCustomAnalytics', {
 				cntrl.setValue(filterInfo[key]);
 			}
 		}
-	
 	},
 	
 	_buildChartFilteringControls: function() {	
@@ -141,8 +150,8 @@ Ext.define('OnDemandCustomAnalytics', {
 		var typeStore = Ext.create('Ext.data.Store', {
 			fields: ['display', 'value'],
 			data: [
-				{'display': 'Defects', value: 'Defect'},
-				{'display': 'User Stories', value: 'HierarchicalRequirement'}
+				{'display': 'Defect', value: 'Defect'},
+				{'display': 'User Story', value: 'HierarchicalRequirement'}
 			]
 		});
 		
@@ -172,7 +181,7 @@ Ext.define('OnDemandCustomAnalytics', {
 		this.startTimePicker = Ext.create('Rally.ui.DateField', {
 			fieldLabel: 'Start Date',
 			labelWidth: this._labelWidth,
-			value: new Date().add(-1).month()
+			value: new Date().add(-3).month()
 		});
 		this.startTimePickerContainer = Ext.create('Ext.Container', {
 			items: [this.startTimePicker],
@@ -353,7 +362,6 @@ Ext.define('OnDemandCustomAnalytics', {
     _refreshChart: function() {
 		this.chartQuery = this._buildChartQuery();
 		this.getEl().mask('Loading...');
-		console.log(this.typeFilter);
 		this.chartConfigBuilder.build(this.chartQuery, this.startTimePicker.getValue().toISOString(), this.endTimePicker.getValue().toISOString(), 
 			this.typeFilter.getRawValue() + " Count", Ext.bind(this._afterChartConfigBuilt, this));
     },

@@ -121,7 +121,7 @@
                 };
 
                 lumenize.ChartTime.setTZPath("");
-                var tscResults = burnCalculator(queryResultsData.Results, burnConfig);
+                var tscResults = burnCalculator(queryResultsData.Results, burnConfig, this.chartTitle);
 
                 var categories = tscResults.categories;
                 var series = tscResults.series;
@@ -151,7 +151,7 @@
                     yAxis:[
                         {
                             title:{
-                                text:'Defect Count'
+                                text:this.chartTitle
                             },
                             labels:{
                                 formatter:function () {

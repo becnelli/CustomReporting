@@ -101,7 +101,6 @@
 				allowed &= !model.hidden;
 				allowed &= _.indexOf(ignoredFields, model.name) === -1;
 				allowed &= (model.type.type === 'string' && model.allowedValues.length !== 0 || model.type.type === 'bool');
-
 				return allowed;
 			});
 			

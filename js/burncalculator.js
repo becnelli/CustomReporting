@@ -14,7 +14,7 @@
 
   utils = lumenize.utils;
 
-  burnCalculator = function(results, config) {
+  burnCalculator = function(results, config, valueField) {
     /*
       Takes the "results" from a query to Rally's Analytics API (or similar MVCC-based implementation)
       and returns the series for burn charts.
@@ -94,7 +94,7 @@
           type = 'column';
           break;
         case 'scope':
-          name = "Defect Count";
+          name = valueField;
           if (config.upSeriesType === 'Story Count') {
             f = '$count';
           } else if (config.upSeriesType === 'Points') {
