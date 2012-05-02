@@ -58,16 +58,18 @@ Ext.define('OnDemandCustomAnalytics', {
 		this.reportStore = Ext.create('Ext.data.Store', {
 			fields: ['display'],
 			data: [
-				{'display': 'Released - Critical/High'},
-				{'display': 'Blocked'}
+				{'display': 'Defects: Released - Critical/High'},
+				{'display': 'Defects: Blocked'}
 			],
 			filterInfo: {
-				'Released - Critical/High': {
+				'Defects: Released - Critical/High': {
+					Type: 'Defect',
 					State: ['Submitted', 'Open', 'Fixed/Resolved'],
 					ReleasedDefect: [true],
 					Priority: ['Critical', 'High']
 				},
-				"Blocked": {
+				"Defects: Blocked": {
+					Type: 'Defect',
 					State: ['Submitted', 'Open', 'Fixed/Resolved'],
 					Blocked: [true]
 				}
@@ -97,7 +99,6 @@ Ext.define('OnDemandCustomAnalytics', {
 		var filterInfo = this.reportStore.filterInfo[selectedReport];
 		
 		var fields = _.keys(filterInfo);
-		//fields = _.without(fields, 'State');
 		this.defectFieldPicker.setValue(fields);
 		
 		for(var key in filterInfo)
@@ -124,31 +125,33 @@ Ext.define('OnDemandCustomAnalytics', {
 			}
 		});
 		
-		// // State Picker
-		// this.defectStatePicker = Ext.create('Rally.ui.AttributeMultiComboBox', {
-				// id: 'State',
-				// model: 'Defect',
-				// field: 'State',
-				// fieldLabel: 'State',
-				// labelWidth: this._labelWidth,
-				// multiSelect: true,
-				// listeners:{
-					// ready: function(comboBox){
-						// comboBox.setValue(['Submitted', 'Open']);
-					// }
-				// }
-			// });
+		var typeStore = Ext.create('Ext.data.Store', {
+			fields: ['display', 'value'],
+			data: [
+				{'display': 'Defects', value: 'Defect'}
+			]
+		});
 		
+		// Type Filter
+		this.typeFilter = Ext.create('Rally.ui.ComboBox', {
+			id: 'Type',
+			fieldLabel: 'Data Type',
+			labelWidth: this._labelWidth,
+			store: typeStore,
+			queryMode: 'local',
+			displayField: 'display',
+			valueField: 'value'
+		});
+		this.typeFilterContainer = Ext.create('Ext.Container', {
+			items: [this.typeFilter],
+			layout: 'anchor',
+			defaults: {
+				anchor: '100%'
+			}
+		});
+		filterContainer.add( this.typeFilterContainer );
 		
-		// this.defectStatePickerContainer = Ext.create('Ext.Container', {
-			// items: [this.defectStatePicker],
-			// layout: 'anchor',
-			// defaults: {
-				// anchor: '100%'
-			// }
-		// });
-		// filterContainer.add( this.defectStatePickerContainer );
-		
+		// Start and End time
 		this.startTimePicker = Ext.create('Rally.ui.DateField', {
 			fieldLabel: 'Start Date',
 			labelWidth: this._labelWidth,
