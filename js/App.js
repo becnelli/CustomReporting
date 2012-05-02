@@ -210,7 +210,7 @@ Ext.define('BurnChartApp', {
 					]
 				});
 				
-				var newFilter = Ext.create('Ext.form.ComboBox', {
+				var newFilter = Ext.create('Ext.ux.form.field.BoxSelect', {
 					id: added[i],
 					fieldLabel: added[i],
 					labelWidth: labelWidth,
