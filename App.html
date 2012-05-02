@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>BurnChartApp</title>
+    <title>On-Demand Custom Analytics</title>
     
     <script type="text/javascript" src="/apps/2.0p/sdk-debug.js"></script>
     
@@ -489,14 +489,14 @@
                     var me = this,
                         picker, isAbove,
                         aboveSfx = '-above',
-                        itemBox = me.itemList.getBox(false, true);
+                        itemBox = me.itemList ? me.itemList.getBox(false, true) : null;
             
                     if (this.isExpanded) {
                         picker = me.getPicker();
                         var pickerScrollPos = picker.getTargetEl().dom.scrollTop;
                         if (me.matchFieldWidth) {
                             // Auto the height (it will be constrained by min and max width) unless there are no records to display.
-                            picker.setSize(itemBox.width, picker.store && picker.store.getCount() ? null : 0);
+                            picker.setSize(itemBox ? itemBox.width : null, picker.store && picker.store.getCount() ? null : 0);
                         }
                         if (picker.isFloating()) {
                             picker.alignTo(me.itemList, me.pickerAlign, me.pickerOffset);
@@ -1461,6 +1461,7 @@
                             }
                         }, this);
                         this.store.loadRawData(allowedValues);
+            			this.fireEvent('ready', this);
                     },
             
                     _onAfterRender: function() {
@@ -2652,9 +2653,9 @@
                  *         renderTo: Ext.getBody().dom
                  *     });
                  */
-                Ext.define('DefectFieldComboBox', {
+                Ext.define('FieldComboBox', {
                     requires: ['Ext.Array'],
-                    extend: 'Rally.ui.ComboBox',
+                    extend: 'Rally.ui.AttributeMultiComboBox',
                     alias: 'widget.defectfieldcombobox',
             
                     config: {
@@ -2732,14 +2733,13 @@
                     _onModelRetrieved: function(model) {
                         this.model = model;
             			
-            			var ignoredFields = ['State'];
+            			var ignoredFields = [];
             			var allowedTypes = ['string', 'bool'];
             			var filterableFields = _.filter(model.getFields(), function(model){
             				var allowed = true;
             				allowed &= !model.hidden;
             				allowed &= _.indexOf(ignoredFields, model.name) === -1;
             				allowed &= (model.type.type === 'string' && model.allowedValues.length !== 0 || model.type.type === 'bool');
-            
             				return allowed;
             			});
             			
@@ -2795,7 +2795,7 @@
             
               utils = lumenize.utils;
             
-              burnCalculator = function(results, config) {
+              burnCalculator = function(results, config, valueField) {
                 /*
                   Takes the "results" from a query to Rally's Analytics API (or similar MVCC-based implementation)
                   and returns the series for burn charts.
@@ -2875,7 +2875,7 @@
                       type = 'column';
                       break;
                     case 'scope':
-                      name = "Defect Count";
+                      name = valueField;
                       if (config.upSeriesType === 'Story Count') {
                         f = '$count';
                       } else if (config.upSeriesType === 'Points') {
@@ -3074,7 +3074,7 @@
                             };
             
                             lumenize.ChartTime.setTZPath("");
-                            var tscResults = burnCalculator(queryResultsData.Results, burnConfig);
+                            var tscResults = burnCalculator(queryResultsData.Results, burnConfig, this.chartTitle);
             
                             var categories = tscResults.categories;
                             var series = tscResults.series;
@@ -3104,7 +3104,7 @@
                                 yAxis:[
                                     {
                                         title:{
-                                            text:'Defect Count'
+                                            text:this.chartTitle
                                         },
                                         labels:{
                                             formatter:function () {
@@ -3148,7 +3148,7 @@
                             this.buildFinishedCallback(true, chartConfiguration);
                     }
                 });
-            })();            Ext.define('BurnChartApp', {
+            })();            Ext.define('OnDemandCustomAnalytics', {
                 extend:'Rally.app.App',
                 mixins: {
                     messageable: 'Rally.Messageable'
@@ -3157,8 +3157,10 @@
                     type: 'hbox',
                     align: 'stretch'
                 },
-                appName:'Burn Chart',
+                appName:'On-Demand Custom Analytics',
                 cls:'burnchart',
+            	_labelWidth: 120,
+            	_padding: '2 0 0 0',
             
                 launch: function () {		
                     this.chartConfigBuilder = Ext.create('Rally.app.analytics.BurnChartBuilder');
@@ -3179,7 +3181,7 @@
             			items: [reportControls, chartFilteringControls, runQueryButton],
             			flex: 1,
             			defaults: {
-            				padding: '5 0 0 0'
+            				padding: '5 0 0 5'
             			}
             		});
             		
@@ -3195,42 +3197,57 @@
             		var reportContainer = Ext.create('Ext.panel.Panel', {
             			title: 'Standard Reports',
             			layout: {
-            				type: 'fit'
+            				type: 'anchor'
             			},
             			defaults: {
-            				padding: '2 0 2 0'
+            				padding: this._padding,
+            				anchor: '100%'
             			}
             		});
             		
             		this.reportStore = Ext.create('Ext.data.Store', {
             			fields: ['display'],
             			data: [
-            				{'display': 'Released - Critical/High'},
-            				{'display': 'Blocked'}
+            				{'display': 'Defects: Not Closed, Released and Critical/High'},
+            				{'display': 'Defects: Not Closed and Blocked'},
+            				{'display': 'Defects: Fixed/Resolved'},
+            				{'display': 'User Stories: In-Progress and Blocked'}
             			],
             			filterInfo: {
-            				'Released - Critical/High': {
+            				'Defects: Not Closed, Released and Critical/High': {
+            					Type: 'Defect',
             					State: ['Submitted', 'Open', 'Fixed/Resolved'],
             					ReleasedDefect: [true],
             					Priority: ['Critical', 'High']
             				},
-            				"Blocked": {
+            				"Defects: Not Closed and Blocked": {
+            					Type: 'Defect',
             					State: ['Submitted', 'Open', 'Fixed/Resolved'],
+            					Blocked: [true]
+            				},
+            				"Defects: Fixed/Resolved": {
+            					Type: 'Defect',
+            					State: ['Fixed/Resolved']
+            				},
+            				"User Stories: In-Progress and Blocked": {
+            					Type: 'HierarchicalRequirement',
+            					ScheduleState: ['In-Progress'],
             					Blocked: [true]
             				}
             			}
             		});
             		
-            		this.reportComboBox = Ext.create('Ext.form.ComboBox', {
+            		this.reportComboBox = Ext.create('Ext.form.field.ComboBox', {
             			fieldLabel: "Report",
+            			labelWidth: this._labelWidth,
             			store: this.reportStore,
             			queryMode: 'local',
             			displayField: 'display',
             			valueField: 'display',
-            			listeners: {
-            				select: Ext.bind(this._reportSelected, this)
-            			}
+            			padding: this._padding,
+            			editable: false
             		});
+            		this.reportComboBox.addListener('select', this._reportSelected, this);
             		
             		reportContainer.add(this.reportComboBox);
             	
@@ -3241,9 +3258,20 @@
             		var selectedReport = records[0].data.display;
             		var filterInfo = this.reportStore.filterInfo[selectedReport];
             		
+            		// select filter first
+            		this._typeFilterSelected(null, [{
+            			data: {
+            				value: filterInfo['Type']
+            			}
+            		}]);
+            		
+            		// then set the custom filters
+            		this._setCustomFilters(filterInfo);
+            	},
+            	
+            	_setCustomFilters: function(filterInfo) {
             		var fields = _.keys(filterInfo);
-            		fields = _.without(fields, 'State');
-            		this.defectFieldPicker.setValue(fields);
+            		this.currentTypeFilter.setValue(fields);
             		
             		for(var key in filterInfo)
             		{
@@ -3261,65 +3289,114 @@
             		var filterContainer = Ext.create('Ext.panel.Panel', {
             			title: 'Chart Filtering',
             			layout: {
-            				type: 'fit'
+            				type: 'anchor'
             			},
             			defaults: {
-            				padding: '2 2 0 2'
+            				padding: this._padding,
+            				anchor: '100%'
             			}
             		});
             		
-            		// State Picker
-            		this.defectStatePicker = Ext.create('Rally.ui.AttributeMultiComboBox', {
-            				id: 'State',
-            				model: 'Defect',
-            				field: 'State',
-            				fieldLabel: 'State',
-            				multiSelect: true,
-            				listeners:{
-            					ready: function(comboBox){
-            						comboBox.setValue(['Submitted', 'Open']);
-            					}
-            				}
-            			});
-            		
-            		
-            		this.defectStatePickerContainer = Ext.create('Ext.Container', {
-            			items: [this.defectStatePicker]
+            		var typeStore = Ext.create('Ext.data.Store', {
+            			fields: ['display', 'value'],
+            			data: [
+            				{'display': 'Defect', value: 'Defect'},
+            				{'display': 'User Story', value: 'HierarchicalRequirement'},
+            				{'display': 'Task', value: 'Task'}
+            			]
             		});
-            		filterContainer.add( this.defectStatePickerContainer );
             		
+            		// Type Filter
+            		this.typeFilter = Ext.create('Rally.ui.ComboBox', {
+            			id: 'Type',
+            			fieldLabel: 'Data Type',
+            			labelWidth: this._labelWidth,
+            			store: typeStore,
+            			queryMode: 'local',
+            			displayField: 'display',
+            			valueField: 'value',
+            			listeners: {
+            				select: Ext.bind(this._typeFilterSelected, this)
+            			}
+            		});
+            		this.typeFilterContainer = Ext.create('Ext.Container', {
+            			items: [this.typeFilter],
+            			layout: 'anchor',
+            			defaults: {
+            				anchor: '100%'
+            			}
+            		});
+            		filterContainer.add( this.typeFilterContainer );
+            		
+            		// Start and End time
             		this.startTimePicker = Ext.create('Rally.ui.DateField', {
             			fieldLabel: 'Start Date',
-            			value: new Date().add(-1).month()
+            			labelWidth: this._labelWidth,
+            			value: new Date().add(-3).month()
             		});
             		this.startTimePickerContainer = Ext.create('Ext.Container', {
-            			items: [this.startTimePicker]
+            			items: [this.startTimePicker],
+            			layout: 'anchor',
+            			defaults: {
+            				anchor: '100%'
+            			}
             		});
             		filterContainer.add( this.startTimePickerContainer );
             		
             		this.endTimePicker = Ext.create('Rally.ui.DateField', {
             			fieldLabel: 'End Date',
+            			labelWidth: this._labelWidth,
             			value: new Date().add(1).days()
             		});
             		this.endTimePickerContainer = Ext.create('Ext.Container', {
-            			items: [this.endTimePicker]
+            			items: [this.endTimePicker],
+            			layout: 'anchor',
+            			defaults: {
+            				anchor: '100%'
+            			}
             		});
             		filterContainer.add( this.endTimePickerContainer );
             		
             		// Customer Filter Picker
-            		this.defectFieldPicker = Ext.create('DefectFieldComboBox', {
+            		this.defectFieldPicker = Ext.create('FieldComboBox', {
             			model: 'Defect',
             			fieldLabel: 'Custom Filters',
+            			labelWidth: this._labelWidth,
             			multiSelect: true,
+            			hidden: true,
+            			listeners:{
+            				change: Ext.bind(this._defectFieldSelectionChanged, this)
+            			}
+            		});
+            		this.storyFieldPicker = Ext.create('FieldComboBox', {
+            			model: 'HierarchicalRequirement',
+            			fieldLabel: 'Custom Filters',
+            			labelWidth: this._labelWidth,
+            			multiSelect: true,
+            			hidden: true,
+            			listeners:{
+            				change: Ext.bind(this._defectFieldSelectionChanged, this)
+            			}
+            		});
+            		this.taskFieldPicker = Ext.create('FieldComboBox', {
+            			model: 'Task',
+            			fieldLabel: 'Custom Filters',
+            			labelWidth: this._labelWidth,
+            			multiSelect: true,
+            			hidden: true,
             			listeners:{
             				change: Ext.bind(this._defectFieldSelectionChanged, this)
             			}
             		});
             		
-            		this.defectFieldPickerContainer = Ext.create('Ext.Container', {
-            			items: [this.defectFieldPicker ]
+            		this.typeFieldPickerContainer = Ext.create('Ext.Container', {
+            			items: [this.defectFieldPicker, this.storyFieldPicker, this.taskFieldPicker ],
+            			layout: 'anchor',
+            			defaults: {
+            				anchor: '100%'
+            			}
             		});
-            		filterContainer.add( this.defectFieldPickerContainer );
+            		filterContainer.add( this.typeFieldPickerContainer );
             		
             		// Custom Filter Container
             		this.customFilterContainer = Ext.create('Ext.panel.Panel', {
@@ -3327,9 +3404,10 @@
             			hidden: true,
             			padding: '5 5 5 5',
             			items: [],
-            			layout: 'fit',
+            			layout: 'anchor',
             			defaults: {
-            				padding: '2 0 0 0'
+            				padding: this._padding,
+            				anchor: '100%'
             			}
             		});
             		filterContainer.add( this.customFilterContainer );
@@ -3337,10 +3415,42 @@
             		return filterContainer;
             	},
             	
-            	_defectFieldSelectionChanged: function(comboBox, newFields, oldFields){
-            		newFields = _.isUndefined(newFields) ? [] : newFields;
-            		oldFields = _.isUndefined(oldFields) ? [] : oldFields;
+            	_typeFilterSelected: function(comboBox, records) {
+            		// set custom filters
+            		if(this.currentTypeFilter) {
+            			this.currentTypeFilter.hide();
+            			this._setCustomFilters({});
+            		}
+            			
+            		if(records[0].data.value === 'Defect') {
+            			this.currentTypeFilter = this.defectFieldPicker;
+            			this._setCustomFilters(
+            				{
+            					State: ['Submitted', 'Open', 'Fixed/Resolved']
+            				}
+            			);
+            		} else if (records[0].data.value === 'HierarchicalRequirement')  {
+            			this.currentTypeFilter = this.storyFieldPicker;
+            			this._setCustomFilters(
+            				{
+            					ScheduleState: [ 'In-Progress' ]
+            				}
+            			);
+            		} else if (records[0].data.value === 'Task') {
+            			this.currentTypeFilter = this.taskFieldPicker;
+            			this._setCustomFilters(
+            				{
+            				}
+            			);
+            		}
+            		this.currentTypeFilter.show();
             		
+            	},
+            	
+            	_defectFieldSelectionChanged: function(comboBox, newFields, oldFields){
+            		newFields = _.isUndefined(newFields) || newFields.length === 0 ? [] : newFields.split(', ');
+            		oldFields = _.isUndefined(oldFields) || oldFields.length === 0  ? [] : oldFields.split(', ');
+            
             		var added = _.difference(newFields, oldFields);
             		var removed = _.difference(oldFields, newFields);
             		
@@ -3349,9 +3459,8 @@
             		else
             			this.customFilterContainer.show();
             		
-            		var labelWidth = 120;
             		for (var i in added) {
-            			if(this.defectFieldPicker.fieldTypes[added[i]] === 'bool') {
+            			if(this.currentTypeFilter.fieldTypes[added[i]] === 'bool') {
             				var filterStore = Ext.create('Ext.data.Store', {
             					fields: ['display', 'value'],
             					data: [
@@ -3360,10 +3469,10 @@
             					]
             				});
             				
-            				var newFilter = Ext.create('Ext.form.ComboBox', {
+            				var newFilter = Ext.create('Ext.ux.form.field.BoxSelect', {
             					id: added[i],
             					fieldLabel: added[i],
-            					labelWidth: labelWidth,
+            					labelWidth: this._labelWidth,
             					multiSelect: true,
             					store: filterStore,
             					queryMode: 'local',
@@ -3372,12 +3481,12 @@
             				});
             			}
             			else {
-            				var newFilter = Ext.create('Rally.ui.AttributeComboBox', {
+            				var newFilter = Ext.create('Rally.ui.AttributeMultiComboBox', {
             					id: added[i],
-            					model: 'Defect',
+            					model: this.typeFilter.getValue(),
             					field: added[i],
             					fieldLabel: added[i],
-            					labelWidth: labelWidth,
+            					labelWidth: this._labelWidth,
             					multiSelect: true
             				});
             			}
@@ -3405,7 +3514,7 @@
                             id: 'chartCmp',
             				flex: 2,
                             xtype: 'component',
-                            html: '<div>No user story data found. :(</div>'
+                            html: '<div>No ' + this.typeFilter.getRawValue() + ' data found for the specified query.</div>'
                         });
                     }
                 },
@@ -3421,20 +3530,17 @@
             		this.chartQuery = this._buildChartQuery();
             		this.getEl().mask('Loading...');
             		this.chartConfigBuilder.build(this.chartQuery, this.startTimePicker.getValue().toISOString(), this.endTimePicker.getValue().toISOString(), 
-            			"Defect Count", Ext.bind(this._afterChartConfigBuilt, this));
+            			this.typeFilter.getRawValue() + " Count", Ext.bind(this._afterChartConfigBuilt, this));
                 },
             	
             	_buildChartQuery: function(){
                     var chartQuery = {
                         find:{
-                            _Type:'Defect'
+                            _Type: this.typeFilter.getValue()
                         }
                     };
             		
             		chartQuery.find._ProjectHierarchy = Rally.environment.getContext().getScope().project.ObjectID;
-            		
-            		var defectStates = this.defectStatePicker.getValue();
-            		chartQuery.find.State = {$in:defectStates};
             		
             		var filterItems = this.customFilterContainer.query('pickerfield');
             		for (var i in filterItems)
@@ -3447,8 +3553,8 @@
             	}
             });
 
-            Rally.launchApp('BurnChartApp', {
-                name: 'BurnChartApp'
+            Rally.launchApp('OnDemandCustomAnalytics', {
+                name: 'On-Demand Custom Analytics'
             });
         });
     </script>

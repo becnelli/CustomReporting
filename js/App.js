@@ -151,7 +151,8 @@ Ext.define('OnDemandCustomAnalytics', {
 			fields: ['display', 'value'],
 			data: [
 				{'display': 'Defect', value: 'Defect'},
-				{'display': 'User Story', value: 'HierarchicalRequirement'}
+				{'display': 'User Story', value: 'HierarchicalRequirement'},
+				{'display': 'Task', value: 'Task'}
 			]
 		});
 		
@@ -227,9 +228,19 @@ Ext.define('OnDemandCustomAnalytics', {
 				change: Ext.bind(this._defectFieldSelectionChanged, this)
 			}
 		});
+		this.taskFieldPicker = Ext.create('FieldComboBox', {
+			model: 'Task',
+			fieldLabel: 'Custom Filters',
+			labelWidth: this._labelWidth,
+			multiSelect: true,
+			hidden: true,
+			listeners:{
+				change: Ext.bind(this._defectFieldSelectionChanged, this)
+			}
+		});
 		
 		this.typeFieldPickerContainer = Ext.create('Ext.Container', {
-			items: [this.defectFieldPicker, this.storyFieldPicker ],
+			items: [this.defectFieldPicker, this.storyFieldPicker, this.taskFieldPicker ],
 			layout: 'anchor',
 			defaults: {
 				anchor: '100%'
@@ -268,11 +279,17 @@ Ext.define('OnDemandCustomAnalytics', {
 					State: ['Submitted', 'Open', 'Fixed/Resolved']
 				}
 			);
-		} else {
+		} else if (records[0].data.value === 'HierarchicalRequirement')  {
 			this.currentTypeFilter = this.storyFieldPicker;
 			this._setCustomFilters(
 				{
 					ScheduleState: [ 'In-Progress' ]
+				}
+			);
+		} else if (records[0].data.value === 'Task') {
+			this.currentTypeFilter = this.taskFieldPicker;
+			this._setCustomFilters(
+				{
 				}
 			);
 		}
@@ -293,7 +310,7 @@ Ext.define('OnDemandCustomAnalytics', {
 			this.customFilterContainer.show();
 		
 		for (var i in added) {
-			if(this.defectFieldPicker.fieldTypes[added[i]] === 'bool') {
+			if(this.currentTypeFilter.fieldTypes[added[i]] === 'bool') {
 				var filterStore = Ext.create('Ext.data.Store', {
 					fields: ['display', 'value'],
 					data: [
@@ -316,7 +333,7 @@ Ext.define('OnDemandCustomAnalytics', {
 			else {
 				var newFilter = Ext.create('Rally.ui.AttributeMultiComboBox', {
 					id: added[i],
-					model: 'Defect',
+					model: this.typeFilter.getValue(),
 					field: added[i],
 					fieldLabel: added[i],
 					labelWidth: this._labelWidth,
@@ -347,7 +364,7 @@ Ext.define('OnDemandCustomAnalytics', {
                 id: 'chartCmp',
 				flex: 2,
                 xtype: 'component',
-                html: '<div>No user story data found. :(</div>'
+                html: '<div>No ' + this.typeFilter.getRawValue() + ' data found for the specified query.</div>'
             });
         }
     },
